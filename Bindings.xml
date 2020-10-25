@@ -1,0 +1,5 @@
+<Bindings>
+	<Binding name="COMPACTACTIONBAR_TOGGLEBUTTONS" header="COMPACTACTIONBAR" category="ADDONS" default="CTRL-SPACE">
+		CompactActionBarToggleButtons()
+	</Binding>
+</Bindings>
