@@ -14,6 +14,8 @@ local DefaultOptions = {
   MainMenuBarStrata = "MEDIUM",
   CompactBarMode = COMPACTBARMODE_TOGGLE,
   ShowToggleButton = true,
+  IncludeBarSwitcher = false,
+  ShowBagSlotsCount = true,
   ExperienceBarAtBottom = false,
   ExperienceBarHeight = 10,
   ReputationBarHeight = 7,
@@ -32,7 +34,9 @@ local Presets = {
     MainMenuBarScale = 1.0,
     MainMenuBarStrata = "MEDIUM",
     CompactBarMode = COMPACTBARMODE_DISABLED,
-    ShowToggleButton = true,
+    ShowToggleButton = false,
+    IncludeBarSwitcher = false,
+    ShowBagSlotsCount = false,
     ExperienceBarAtBottom = false,
     ExperienceBarHeight = 10,
     ReputationBarHeight = 7,
@@ -49,6 +53,8 @@ local Presets = {
     MainMenuBarStrata = "MEDIUM",
     CompactBarMode = COMPACTBARMODE_TOGGLE,
     ShowToggleButton = false,
+    IncludeBarSwitcher = true,
+    ShowBagSlotsCount = false,
     ExperienceBarAtBottom = true,
     ExperienceBarHeight = 10,
     ReputationBarHeight = 10,
@@ -65,6 +71,8 @@ local Presets = {
     MainMenuBarStrata = "MEDIUM",
     CompactBarMode = COMPACTBARMODE_TOGGLE,
     ShowToggleButton = false,
+    IncludeBarSwitcher = false,
+    ShowBagSlotsCount = true,
     ExperienceBarAtBottom = true,
     ExperienceBarHeight = 12,
     ReputationBarHeight = 12,
@@ -81,6 +89,7 @@ local Presets = {
 -- Global
 local ShortMainMenuBarWidth = 512
 local DisplayRightSideButtons = false
+local BarSwitchButtonsWidth = 40
 
 -- Containers
 local CompactActionBarContainer = CreateFrame("Frame", "CompactActionBarContainer", MainMenuBar)
@@ -91,18 +100,10 @@ local CompactActionBarRightBarFrame = CreateFrame("Frame", "CompactActionBarRigh
 CompactActionBarContainer:SetHeight(42)
 CompactActionBarContainer:SetPoint("BOTTOMLEFT", MainMenuBar, "BOTTOMLEFT", 0, 0)
 CompactActionBarContainer:SetPoint("TOPRIGHT", MainMenuBar, "TOPRIGHT", 0, 0)
-
--- Left frame
-CompactActionBarLeftBarFrame:SetWidth(ShortMainMenuBarWidth)
+CompactActionBarLeftBarFrame:SetWidth(512)
 CompactActionBarLeftBarFrame:SetHeight(43)
-CompactActionBarLeftBarFrame:SetClipsChildren(true)
-CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
-
--- Right frame
-CompactActionBarRightBarFrame:SetWidth(ShortMainMenuBarWidth)
+CompactActionBarRightBarFrame:SetWidth(512)
 CompactActionBarRightBarFrame:SetHeight(43)
-CompactActionBarRightBarFrame:SetClipsChildren(true)
-CompactActionBarRightBarFrame:SetPoint("BOTTOMRIGHT", CompactActionBarContainer, "BOTTOMRIGHT", 0, 0)
 
 -- Toggle button
 local CompactActionBarToggleContainer = CreateFrame("Frame", "CompactActionBarToggleContainer", MainMenuBar)
@@ -116,7 +117,53 @@ CompactActionBarToggle:SetPoint("CENTER", CompactActionBarToggleContainer, "CENT
 CompactActionBarToggle:SetFrameLevel(5)
 CompactActionBarToggle:SetScript("OnClick", function() CompactActionBarToggleButtons() end)
 
-local function InitContainerLayout()
+-- Free bag spaces
+local TotalFreeBagSlotsCount = CompactActionBarToggle:CreateFontString(CompactActionBarToggle, "HIGH")
+TotalFreeBagSlotsCount:SetFont("Fonts\\ARIALN.TTF", 18, "OUTLINE")
+TotalFreeBagSlotsCount:SetPoint("BOTTOMRIGHT", CompactActionBarToggle, "BOTTOMRIGHT", -1, 2)
+local FreeBagSlotsCount = {}
+
+local BagButtons = {
+  MainMenuBarBackpackButton,
+  CharacterBag0Slot,
+  CharacterBag1Slot,
+  CharacterBag2Slot,
+  CharacterBag3Slot,
+}
+
+for i, BagButton in pairs(BagButtons) do
+  local BagFreeSlotsText = BagButton:CreateFontString(BagButton, "HIGH")
+  BagFreeSlotsText:SetFont("Fonts\\ARIALN.TTF", 14, "OUTLINE")
+  BagFreeSlotsText:SetPoint("BOTTOMRIGHT", BagButton, "BOTTOMRIGHT", -2, 2)
+  FreeBagSlotsCount[i] = BagFreeSlotsText
+end
+
+-- Extra textures
+local BarSwitchButtonsTexture = CompactActionBarLeftBarFrame:CreateTexture()
+BarSwitchButtonsTexture:SetTexture(MainMenuBarTexture0:GetTexture())
+BarSwitchButtonsTexture:SetPoint("BOTTOMLEFT", MainMenuBarTexture1, "BOTTOMRIGHT", 0, 0)
+BarSwitchButtonsTexture:SetTexCoord(0, BarSwitchButtonsWidth / MainMenuBarTexture0:GetWidth(), 1/3, 0.5)
+BarSwitchButtonsTexture:SetWidth(BarSwitchButtonsWidth)
+BarSwitchButtonsTexture:SetHeight(MainMenuBarTexture0:GetHeight())
+
+local ButtonsTextureWidth = (MainMenuBarTexture0:GetWidth() + BarSwitchButtonsWidth) / 2
+local ButtonsTextureRatio = ButtonsTextureWidth / MainMenuBarTexture0:GetWidth()
+
+local MiniButtonsExtendedTexture0 = CompactActionBarLeftBarFrame:CreateTexture()
+MiniButtonsExtendedTexture0:SetTexture(MainMenuBarTexture0:GetTexture())
+MiniButtonsExtendedTexture0:SetPoint("BOTTOMRIGHT", MainMenuBarTexture3, "BOTTOMLEFT", 0, 0)
+MiniButtonsExtendedTexture0:SetTexCoord(1-ButtonsTextureRatio, 1, 1/3, 0.5)
+MiniButtonsExtendedTexture0:SetWidth(ButtonsTextureWidth)
+MiniButtonsExtendedTexture0:SetHeight(MainMenuBarTexture0:GetHeight())
+
+local MiniButtonsExtendedTexture1 = CompactActionBarLeftBarFrame:CreateTexture()
+MiniButtonsExtendedTexture1:SetTexture(MainMenuBarTexture0:GetTexture())
+MiniButtonsExtendedTexture1:SetPoint("BOTTOMRIGHT", MiniButtonsExtendedTexture0, "BOTTOMLEFT", 0, 0)
+MiniButtonsExtendedTexture1:SetTexCoord(1, ButtonsTextureRatio, 1/3, 0.5)
+MiniButtonsExtendedTexture1:SetWidth(ButtonsTextureWidth)
+MiniButtonsExtendedTexture1:SetHeight(MainMenuBarTexture0:GetHeight())
+
+local function InitContainerLayout(HasSwitcher)
   -- Left texture
   MainMenuBarTexture0:ClearAllPoints()
   MainMenuBarTexture0:SetPoint("BOTTOMLEFT", CompactActionBarLeftBarFrame, "BOTTOMLEFT", 0, 0)
@@ -138,12 +185,25 @@ local function InitContainerLayout()
   MainMenuBarBackpackButton:SetPoint("CENTER", CompactActionBarRightBarFrame, "BOTTOMRIGHT", -25, 21)
 
   -- Move the character buttons
+  local CharacterButtonAnchor = 40
+  if HasSwitcher then
+    CharacterButtonAnchor = -32
+  end
+
   CharacterMicroButton:ClearAllPoints()
-  CharacterMicroButton:SetPoint("BOTTOMLEFT", CompactActionBarRightBarFrame, "BOTTOMRIGHT", -472, 2)
+  CharacterMicroButton:SetPoint("BOTTOMLEFT", CompactActionBarRightBarFrame, "BOTTOMLEFT", CharacterButtonAnchor, 2)
 
   -- Move the bar switcher
   MainMenuBarPageNumber:ClearAllPoints()
-  MainMenuBarPageNumber:SetPoint("CENTER", CompactActionBarRightBarFrame, "BOTTOMRIGHT", -482, 21)
+  local SwitcherAnchorFrame = CompactActionBarRightBarFrame
+  local SwitcherAnchorPoint = "BOTTOMLEFT"
+
+  if HasSwitcher then
+    SwitcherAnchorFrame = CompactActionBarLeftBarFrame
+    SwitcherAnchorPoint = "BOTTOMRIGHT"
+  end
+
+  MainMenuBarPageNumber:SetPoint("CENTER", SwitcherAnchorFrame, SwitcherAnchorPoint, 30, 21)
   ActionBarUpButton:ClearAllPoints()
   ActionBarUpButton:SetPoint("CENTER", MainMenuBarPageNumber, "CENTER", -20, 10)
   ActionBarDownButton:ClearAllPoints()
@@ -359,6 +419,27 @@ local function SetMainMenuBarScale(Scale)
   UpdateMultiBars()
 end
 
+local function SetXPBarTexturesWidth(Width)
+  local e = {
+    ReputationWatchBar.StatusBar.WatchBarTexture0,
+    ReputationWatchBar.StatusBar.WatchBarTexture1,
+    ReputationWatchBar.StatusBar.WatchBarTexture2,
+    ReputationWatchBar.StatusBar.WatchBarTexture3,
+    ReputationWatchBar.StatusBar.XPBarTexture0,
+    ReputationWatchBar.StatusBar.XPBarTexture1,
+    ReputationWatchBar.StatusBar.XPBarTexture2,
+    ReputationWatchBar.StatusBar.XPBarTexture3,
+    MainMenuXPBarTexture0,
+    MainMenuXPBarTexture1,
+    MainMenuXPBarTexture2,
+    MainMenuXPBarTexture3,
+  }
+
+  for i, Element in pairs(e) do
+    Element:SetWidth(Width)
+  end
+end
+
 local function SetTexturesVisibility(Elements, Visible)
   local Alpha = 0
   if Visible then Alpha = 1 end
@@ -400,11 +481,22 @@ local function SetMainMenuBarBackgroundVisbility(Visible)
   local e = {
     MainMenuBarTexture0,
     MainMenuBarTexture1,
-    MainMenuBarTexture2,
     MainMenuBarTexture3,
   }
+  local e2 = {
+    MainMenuBarTexture2,
+  }
+  local extra = {
+    BarSwitchButtonsTexture,
+    MiniButtonsExtendedTexture0,
+    MiniButtonsExtendedTexture1,
+  }
+
+  local HasSwitcher = db.IncludeBarSwitcher and db.CompactBarMode == COMPACTBARMODE_TOGGLE
 
   SetTexturesVisibility(e, Visible)
+  SetTexturesVisibility(e2, Visible and not HasSwitcher)
+  SetTexturesVisibility(extra, Visible and HasSwitcher)
 end
 
 local function SetMaxLevelTexturesVisibility(Visible)
@@ -571,7 +663,7 @@ local function SetContainersLayout(LayoutMode, IsToggled)
   -- Full bar, stack horizontally
   if LayoutMode == COMPACTBARMODE_DISABLED then
     CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
-    CompactActionBarRightBarFrame:SetPoint("BOTTOMRIGHT", CompactActionBarContainer, "BOTTOMRIGHT", 0, 0)
+    CompactActionBarRightBarFrame:SetPoint("BOTTOMLEFT", CompactActionBarLeftBarFrame, "BOTTOMRIGHT", 0, 0)
     CompactActionBarContainer:SetHeight(CompactActionBarLeftBarFrame:GetHeight())
 
   -- Compact bar in toggle mode
@@ -606,19 +698,22 @@ local function SetMainMenuBarTexture(Theme)
   MainMenuBarTexture1:SetTexture(MainMenuBarTexture)
 end
 
-local function SetIsMainMenuBarShort(Enabled)
+function CompactActionBar:UpdateMainMenuBarLayout()
   local MainMenuBarWidth = ShortMainMenuBarWidth
+  local HasSwitcher = db.CompactBarMode == COMPACTBARMODE_TOGGLE and db.IncludeBarSwitcher
+  local XPBarTexturesWidth = ShortMainMenuBarWidth / 2
 
-  if not Enabled then
+  if db.CompactBarMode == COMPACTBARMODE_DISABLED then
     MainMenuBarWidth = MainMenuBarWidth * 2
+  elseif HasSwitcher then
+    MainMenuBarWidth = MainMenuBarWidth + BarSwitchButtonsWidth
+    XPBarTexturesWidth = XPBarTexturesWidth + (BarSwitchButtonsWidth / 2)
   end
 
-  SetMainMenuBarWidth(MainMenuBarWidth)
-end
-
-function CompactActionBar:UpdateMainMenuBarLayout()
+  InitContainerLayout(HasSwitcher)
   SetContainersLayout(db.CompactBarMode, DisplayRightSideButtons)
-  SetIsMainMenuBarShort(db.CompactBarMode ~= COMPACTBARMODE_DISABLED)
+  SetMainMenuBarWidth(MainMenuBarWidth)
+  SetXPBarTexturesWidth(XPBarTexturesWidth)
   CompactActionBarToggle:SetShown(db.CompactBarMode == COMPACTBARMODE_TOGGLE and db.ShowToggleButton)
   UpdateMainMenuBarPositions()
 end
@@ -655,7 +750,6 @@ function CompactActionBar:Update()
   -- Frame Strata
   MainMenuBar:SetFrameStrata(db.MainMenuBarStrata)
 
-  InitContainerLayout()
   self:UpdateMainMenuBarLayout()
   self:UpdateMainMenuBarTextures()
 
@@ -670,13 +764,27 @@ function CompactActionBar:Update()
   CompactActionBarToggleIconTexture:SetTexture(ButtonTexture)
 
   -- Bag slots
-  local NumberOfFreeSlots =
-    GetContainerNumFreeSlots(0) +
-    GetContainerNumFreeSlots(1) +
-    GetContainerNumFreeSlots(2) +
-    GetContainerNumFreeSlots(3) +
-    GetContainerNumFreeSlots(4)
+  local NumberOfFreeSlots = 0
 
+  for i, TextLabel in pairs(FreeBagSlotsCount) do
+    local ContainerFreeSlots = GetContainerNumFreeSlots(i-1)
+    NumberOfFreeSlots = NumberOfFreeSlots + ContainerFreeSlots
+
+    if ContainerFreeSlots <= 0 then
+      ContainerFreeSlots = "|cFFFF0000"..ContainerFreeSlots.."|r"
+    end
+
+    TextLabel:SetText(ContainerFreeSlots)
+  end
+
+  if NumberOfFreeSlots <= 0 then
+    NumberOfFreeSlots = "|cFFFF0000"..NumberOfFreeSlots.."|r"
+  end
+
+  TotalFreeBagSlotsCount:SetText(NumberOfFreeSlots)
+
+  SetTexturesVisibility(FreeBagSlotsCount, db.ShowBagSlotsCount)
+  TotalFreeBagSlotsCount:SetShown(not DisplayRightSideButtons and db.ShowBagSlotsCount)
 end
 
 -- Init
@@ -721,6 +829,7 @@ function CompactActionBar:OnInitialize()
     "PET_BAR_HIDEGRID",
     "PET_BAR_SHOWGRID",
     "PET_BAR_UPDATE_COOLDOWN",
+    "BAG_UPDATE",
   }
 
   for i, EventName in pairs(WatchedEvents) do
@@ -729,7 +838,6 @@ function CompactActionBar:OnInitialize()
 
   CompactActionBarContainer:SetScript("OnEvent", function() self:Update() end)
 
-  InitContainerLayout()
   InitExperienceBarsLayout()
 
   self:Update()

@@ -11,6 +11,7 @@ L["Disabled"] = true
 L["Toggle"] = true
 L["Stacked"] = true
 L["Show Toggle Button"] = true
+L["Show Action Bar Page Switch"] = true
 L["Experience & Reputation Bars Below Action Buttons"] = true
 L["Stack Right Action Bar 1"] = true
 L["Stack Right Action Bar 2"] = true
@@ -27,6 +28,7 @@ L["Enable Smooth Fonts"] = true
 L["Hide End Caps"] = true
 L["Hide Action Bar Background"] = true
 L["Hide Experience & Reputation Bars Textures"] = true
+L["Show Number of Free Bag Slots"] = true
 
 L["Presets"] = true
 L["You can choose one of the presets available below that matches your preferences.\nNote: Choosing a preset will overwrite your current settings."] = true

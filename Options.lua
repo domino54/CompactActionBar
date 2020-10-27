@@ -43,8 +43,17 @@ function CompactActionBar:GetOptions()
                         get = function() return self:GetDB("ShowToggleButton") end,
                         set = function(info, value) self:SetDB("ShowToggleButton", value) end,
                     },
-                    ExperienceBarAtBottom = {
+                    IncludeBarSwitcher = {
                         order = 3,
+                        name = L["Show Action Bar Page Switch"],
+                        type = "toggle",
+                        width = "full",
+                        disabled = function() return self:GetDB("CompactBarMode") ~= 1 end,
+                        get = function() return self:GetDB("IncludeBarSwitcher") end,
+                        set = function(info, value) self:SetDB("IncludeBarSwitcher", value) end,
+                    },
+                    ExperienceBarAtBottom = {
+                        order = 4,
                         name = L["Experience & Reputation Bars Below Action Buttons"],
                         type = "toggle",
                         width = "full",
@@ -52,7 +61,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("ExperienceBarAtBottom", value) end,
                     },
                     StackMultiBarLeft = {
-                        order = 4,
+                        order = 5,
                         name = L["Stack Right Action Bar 1"],
                         type = "toggle",
                         width = "full",
@@ -60,7 +69,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("StackMultiBarRight", value) end,
                     },
                     StackMultiBarRight = {
-                        order = 5,
+                        order = 6,
                         name = L["Stack Right Action Bar 2"],
                         type = "toggle",
                         width = "full",
@@ -68,7 +77,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("StackMultiBarLeft", value) end,
                     },
                     MainMenuBarScale = {
-                        order = 6,
+                        order = 7,
                         name = L["Action Bars Scale"],
                         type = "range",
                         width = "full",
@@ -79,7 +88,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("MainMenuBarScale", value) end,
                     },
                     ExperienceBarScale = {
-                        order = 7,
+                        order = 8,
                         name = L["Experience Bar Height"],
                         type = "range",
                         width = "full",
@@ -90,7 +99,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("ExperienceBarHeight", value) end,
                     },
                     ReputationBarScale = {
-                        order = 8,
+                        order = 9,
                         name = L["Reputation Bar Height"],
                         type = "range",
                         width = "full",
@@ -101,7 +110,7 @@ function CompactActionBar:GetOptions()
                         set = function(info, value) self:SetDB("ReputationBarHeight", value) end,
                     },
                     MainMenuBarStrata = {
-                        order = 9,
+                        order = 10,
                         name = L["Action Bar Strata"],
                         type = "select",
                         values = {
@@ -176,6 +185,14 @@ function CompactActionBar:GetOptions()
                         width = "full",
                         get = function() return self:GetDB("HideMainBarXPTexture") end,
                         set = function(info, value) self:SetDB("HideMainBarXPTexture", value) end,
+                    },
+                    ShowBagSlotsCount = {
+                        order = 6,
+                        name = L["Show Number of Free Bag Slots"],
+                        type = "toggle",
+                        width = "full",
+                        get = function() return self:GetDB("ShowBagSlotsCount") end,
+                        set = function(info, value) self:SetDB("ShowBagSlotsCount", value) end,
                     },
                 },
             },
