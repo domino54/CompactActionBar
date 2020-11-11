@@ -1,0 +1,15 @@
+## Interface: 80300
+## Title: Lib: AboutPanel-2.0
+## Notes: Adds an AddOn's ToC fields to its options table
+## Notes-zhCN: 添加插件 ToC 表格到选项栏
+## Notes-zhTW: 將插件 ToC 檔裡頭的欄位資料填到插件的選項表裡
+## Version: 1.0.9
+## Author: Paul Vandersypen, Artur91425
+## X-License: GNU Lesser General Public License 2.1
+## X-Category: Library
+## LoadOnDemand: 1
+
+LibStub\LibStub.lua
+CallbackHandler-1.0\CallbackHandler-1.0.lua
+AceConfig-3.0\AceConfig-3.0.xml
+lib.xml
