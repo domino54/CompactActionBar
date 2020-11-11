@@ -110,6 +110,7 @@ local Presets = {
   --- Classic preset, imitating the original appearance of the WoW Classic action bar.
   Classic = {
     Name = L["Classic WoW"],
+    Image = CompactActionBar.MediaRoot.."Textures/Presets/ClassicWoW.jpg",
     Settings = {
       MainMenuBarScale        = 1.0,
       CompactBarMode          = CompactActionBar.COMPACTBARMODE.DISABLED,
@@ -135,6 +136,7 @@ local Presets = {
   --- Classic preset, imitating the appearance of the retail WoW action bar.
   Retail = {
     Name = L["Retail WoW"],
+    Image = CompactActionBar.MediaRoot.."Textures/Presets/RetailWoW.jpg",
     Settings = {
       MainMenuBarScale        = 1.0,
       ToggleButtonPosition    = CompactActionBar.TOGGLEBUTTONPOS.DISABLED,
@@ -163,6 +165,7 @@ local Presets = {
   --- Minimalistic preset, reducing the occupied space to bare minimum.
   Minimalistic = {
     Name = L["Minimalistic"],
+    Image = CompactActionBar.MediaRoot.."Textures/Presets/Minimalistic.jpg",
     Settings = {
       ToggleButtonPosition    = CompactActionBar.TOGGLEBUTTONPOS.DISABLED,
       MainMenuTextureOpacity  = 0.0,

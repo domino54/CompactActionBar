@@ -1,15 +1,23 @@
 ﻿
 ## Interface: 11305
 
-## Title: |cFFFFFFFFCompact Action Bar|r |cFF00FF00v1.1.0|r
-## Author: Dommy
+## Title: |cFFFFFFFFCompact Action Bar|r |cFF00FF00v1.2.0|r
+## Author: Dommy (Asteveria-MirageRaceway/EU-Alliance)
 ## SavedVariables: CompactActionBarDB
 ## Notes: Reduce the amount of space occupied by your action bar while maintaining the original World of Warcraft look.
-## Version: 1.1.0
+## Version: 1.2.0
 ## OptionalDeps: Ace3
+## X-Website: https://github.com/domino54/CompactActionBar
+## X-Localizations: enUS
+## X-Category: Action Bars
+## X-Copyright: (c) 2020 Dominik Mrajca - All Rights Reserved
 
 Libs\Libs.xml
 Locales\Locales.xml
 
 Core.lua
-Options.lua
+
+Modules\LayoutManager\Classic.lua
+Modules\ButtonColors.lua
+Modules\Options.lua
+Modules\ToggleButton.lua
