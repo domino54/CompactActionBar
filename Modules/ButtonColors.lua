@@ -1,10 +1,129 @@
 local CompactActionBar = LibStub("AceAddon-3.0"):GetAddon("CompactActionBar")
+local Options = LibStub("LibSimpleOptions-1.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("CompactActionBar")
 
 --- Button Colors module
 -- Handles the coloring of action bar buttons when out of range, not enough mana, etc.
 -- @module ButtonColors
 -- @alias M
 local ButtonColors, M = CompactActionBar:CreateModule("ButtonColors")
+
+--- Default settings of the module.
+local DefaultSettings = {
+  EnableFastColorUpdates  = false,
+  DesaturateOnCooldown    = true,
+  OutOfRangeEnabled       = true,
+  OutOfRangeColor         = {1.000, 0.125, 0.125},
+  NotEnoughManaEnabled    = true,
+  NotEnoughManaColor      = {0.125, 0.125, 1.000},
+  ManaAndRangeEnabled     = false,
+  ManaAndRangeColor       = {1.000, 0.125, 1.000},
+  UnusableActionEnabled   = true,
+  UnusableActionColor     = {0.375, 0.375, 0.375},
+}
+
+--- Options table to add to the settings.
+local OptionsTable = {
+  name = L["Button Colors"],
+  desc = L["Signify if the target is out of range & more."],
+  type = "group",
+  args = {
+    EnableFastColorUpdates = {
+      order = 0,
+      name = L["Enable Fast Color Updates"],
+      desc = L["If this option is checked, the button colors will update much faster when stepping in/out of range and when the cooldown is ready. It may impact the game performance."],
+      type = "toggle",
+      width = "full",
+    },
+    DesaturateOnCooldown = {
+      order = 1,
+      name = L["Desaturate Spells When on Cooldown"],
+      desc = L["Signifies that an ability cannot be used because it's on cooldown."],
+      type = "toggle",
+      width = "full",
+    },
+    OutOfRangeHeader = {
+      order = 2,
+      name = L["Out of Range"],
+      type = "header",
+    },
+    OutOfRangeColor = {
+      order = 3,
+      name = "",
+      type = "color",
+      width = 0.15,
+      get = function(info) return Options:GetColor(info[#info]) end,
+      set = function(info, r, g, b) Options:Set(info[#info], {r, g, b}) end,
+    },
+    OutOfRangeEnabled = {
+      order = 4,
+      name = L["Enabled"],
+      desc = L["Colorize the button if the target is out of range."],
+      type = "toggle",
+      width = "half",
+    },
+    NotEnoughManaHeader = {
+      order = 5,
+      name = L["Not Enough Mana"],
+      type = "header",
+    },
+    NotEnoughManaColor = {
+      order = 6,
+      name = "",
+      type = "color",
+      width = 0.15,
+      get = function(info) return Options:GetColor(info[#info]) end,
+      set = function(info, r, g, b) Options:Set(info[#info], {r, g, b}) end,
+    },
+    NotEnoughManaEnabled = {
+      order = 7,
+      name = L["Enabled"],
+      desc = L["Colorize the button if more mana is needed to cast the ability."],
+      type = "toggle",
+      width = "half",
+    },
+    ManaAndRangeHeader = {
+      order = 8,
+      name = L["Out of Range & Not Enough Mana"],
+      type = "header",
+    },
+    ManaAndRangeColor = {
+      order = 9,
+      name = "",
+      type = "color",
+      width = 0.15,
+      get = function(info) return Options:GetColor(info[#info]) end,
+      set = function(info, r, g, b) Options:Set(info[#info], {r, g, b}) end,
+    },
+    ManaAndRangeEnabled = {
+      order = 10,
+      name = L["Enabled"],
+      desc = L["Colorize the button if more mana is needed to cast the ability and target is out of range."],
+      type = "toggle",
+      width = "half",
+    },
+    UnusableActionHeader = {
+      order = 11,
+      name = L["Action Unusable"],
+      type = "header",
+    },
+    UnusableActionColor = {
+      order = 12,
+      name = "",
+      type = "color",
+      width = 0.15,
+      get = function(info) return Options:GetColor(info[#info]) end,
+      set = function(info, r, g, b) Options:Set(info[#info], {r, g, b}) end,
+    },
+    UnusableActionEnabled = {
+      order = 13,
+      name = L["Enabled"],
+      desc = L["Colorize the button if the ability cannot be used."],
+      type = "toggle",
+      width = "half",
+    },
+  },
+}
 
 --- Table storing previous information regarding a slot's action, to reduce unnecessary button updates.
 local PrevActionInfo = {}
@@ -94,7 +213,7 @@ local function UpdateActionButtonColor(ActionButton)
 
   -- Current color properties
   local Color             = M.Colors["Default"].Color
-  local Desaturate        = false
+  local Desaturate        = IsOnCooldown
 
   -- Mixed color if not enough mana and out of range
   if (M.Colors["ManaRange"].IsEnabled and NotEnoughMana and IsOutOfRange) then
@@ -109,7 +228,6 @@ local function UpdateActionButtonColor(ActionButton)
   -- Slightly darken if action is unusable
   elseif (IsUnusable) then
     Color = M.Colors["Unusable"].Color
-    Desaturate = IsOnCooldown
 
   -- Red if target is out of range
   elseif (IsOutOfRange) then
@@ -159,6 +277,7 @@ end
 
 --- Periodically update buttons in retail.
 -- This function calls itself every 100 ms.
+-- Make sure to only call this once, ever.
 local function PeriodicUpdate()
   for i, Button in pairs(ButtonsChecked) do
     UpdateActionButtonColor(Button)
@@ -173,22 +292,55 @@ local function PeriodicUpdate()
   C_Timer.After(UpdatePeriod, PeriodicUpdate)
 end
 
+--- Set the color values of a given case.
+-- @tparam string Name - Name of the case, as 'Range', 'Mana', etc.
+-- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
+-- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
+local function SetColor(Name, IsEnabled, Color)
+  assert(type(Name) == "string", "Name must be a string.")
+  assert(type(IsEnabled) == "boolean", "IsEnabled must be a boolean.")
+  assert(type(Color) == "table", "Color must be a table.")
+
+  M.Colors[Name] = {
+    IsEnabled = IsEnabled,
+    Color = Color,
+  }
+end
+
+--- Listen to addon configuration update.
+local function OnConfigUpdate()
+  -- Settings
+  M.IsFastUpdateMode        = Options:Get("EnableFastColorUpdates")
+  M.DesaturateOnCooldown    = Options:Get("DesaturateOnCooldown")
+
+  -- Set default colors
+  SetColor("Range",     Options:Get("OutOfRangeEnabled"),     Options:Get("OutOfRangeColor"))
+  SetColor("Mana",      Options:Get("NotEnoughManaEnabled"),  Options:Get("NotEnoughManaColor"))
+  SetColor("ManaRange", Options:Get("ManaAndRangeEnabled"),   Options:Get("ManaAndRangeColor"))
+  SetColor("Unusable",  Options:Get("UnusableActionEnabled"), Options:Get("UnusableActionColor"))
+end
+
 --- Initialize the module.
 -- @tparam number GameVersion - Current game version.
 function ButtonColors:Init(GameVersion)
   assert(type(GameVersion) == "number", "GameVersion must be a number.")
 
+  -- Configure module settings
+  Options:AddDefaults(DefaultSettings)
+  Options:AddOptionsTable(OptionsTable)
+  Options:AddListener(OnConfigUpdate)
+
   -- Settings
-  self.IsFastUpdateMode       = false
-  self.DesaturateOnCooldown   = true
+  self.IsFastUpdateMode       = DefaultSettings.EnableFastColorUpdates
+  self.DesaturateOnCooldown   = DefaultSettings.DesaturateOnCooldown
 
   -- Set default colors
   self.Colors = {}
-  self:SetColor("Default",    true,   {1.000, 1.000, 1.000})
-  self:SetColor("Range",      true,   {1.000, 0.125, 0.125})
-  self:SetColor("Mana",       true,   {0.125, 0.125, 1.000})
-  self:SetColor("ManaRange",  false,  {1.000, 0.125, 1.000})
-  self:SetColor("Unusable",   true,   {0.375, 0.375, 0.375})
+  SetColor("Default",    true,                                   {1.000, 1.000, 1.000})
+  SetColor("Range",      DefaultSettings.OutOfRangeEnabled,      DefaultSettings.OutOfRangeColor)
+  SetColor("Mana",       DefaultSettings.NotEnoughManaEnabled,   DefaultSettings.NotEnoughManaColor)
+  SetColor("ManaRange",  DefaultSettings.ManaAndRangeEnabled,    DefaultSettings.ManaAndRangeColor)
+  SetColor("Unusable",   DefaultSettings.UnusableActionEnabled,  DefaultSettings.UnusableActionColor)
 
   -- Hook action button functions - retail
   if (GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
@@ -212,63 +364,4 @@ function ButtonColors:Init(GameVersion)
     hooksecurefunc("ActionButton_OnUpdate", ActionButton_OnUpdate)
     hooksecurefunc("ActionButton_UpdateUsable", ActionButton_UpdateUsable)
   end
-end
-
---- Set the color values of a given case.
--- @tparam string Name - Name of the case, as 'Range', 'Mana', etc.
--- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
--- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
-function ButtonColors:SetColor(Name, IsEnabled, Color)
-  assert(type(Name) == "string", "Name must be a string.")
-  assert(type(IsEnabled) == "boolean", "IsEnabled must be a boolean.")
-  assert(type(Color) == "table", "Color must be a table.")
-
-  self.Colors[Name] = {
-    IsEnabled = IsEnabled,
-    Color = Color,
-  }
-end
-
---- Set the color value for out of range case.
--- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
--- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
-function ButtonColors:SetOutOfRangeColor(IsEnabled, Color)
-  self:SetColor("Range", IsEnabled, Color)
-end
-
---- Set the color value for not enough mana case.
--- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
--- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
-function ButtonColors:SetNotEnoughManaColor(IsEnabled, Color)
-  self:SetColor("Mana", IsEnabled, Color)
-end
-
---- Set the color value for not enough mana and out of range case.
--- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
--- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
-function ButtonColors:SetManaAndRangeColor(IsEnabled, Color)
-  self:SetColor("ManaRange", IsEnabled, Color)
-end
-
---- Set the color value for action unusable case.
--- @tparam boolean IsEnabled - If the coloring case should be enabled or not.
--- @tparam table Color - Table representing a color where keys 1, 2, 3 are R, G, B values.
-function ButtonColors:SetUnusableColor(IsEnabled, Color)
-  self:SetColor("Unusable", IsEnabled, Color)
-end
-
---- Set if the buttons should update in fast mode.
--- @tparam boolean IsFastUpdateMode - If 'true', ActionButton_OnUpdate will skip the rangeTimer check for faster but more expensive updates.
-function ButtonColors:SetIsFastUpdateMode(IsFastUpdateMode)
-  assert(type(IsFastUpdateMode) == "boolean", "IsFastUpdateMode must be a boolean.")
-
-  self.IsFastUpdateMode = IsFastUpdateMode
-end
-
---- Set if the buttons should be desaturated if the action is on cooldown.
--- @tparam boolean DesaturateOnCooldown - If 'true', buttons will desaturate on cooldown.
-function ButtonColors:SetDesaturateOnCooldown(DesaturateOnCooldown)
-  assert(type(DesaturateOnCooldown) == "boolean", "DesaturateOnCooldown must be a boolean.")
-
-  self.DesaturateOnCooldown = DesaturateOnCooldown
 end

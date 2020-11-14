@@ -1,4 +1,5 @@
 local CompactActionBar = LibStub("AceAddon-3.0"):GetAddon("CompactActionBar")
+local Options = LibStub("LibSimpleOptions-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("CompactActionBar")
 
 --- Toggle Button module
@@ -6,6 +7,65 @@ local L = LibStub("AceLocale-3.0"):GetLocale("CompactActionBar")
 -- @module ToggleButton
 -- @alias M
 local ToggleButton, M = CompactActionBar:CreateModule("ToggleButton")
+
+--- Table of possible toggle button positions.
+M.TOGGLEBUTTONPOS = {
+  DISABLED  = 0,  -- Hidden
+  LEFT      = 1,  -- Left side of the action bar
+  RIGHT     = 2,  -- Right side of the action bar
+}
+
+--- Default settings of the module.
+local DefaultSettings = {
+  ToggleButtonPosition    = M.TOGGLEBUTTONPOS.RIGHT,
+  AutoSwitchOnCombat      = true,
+  ToggleButtonBagSlots    = true,
+}
+
+--- Default properties of the module's fonts.
+local DefaultFontProperties = {
+  ToggleButtonBagCount = {
+    Name        = L["Toggle Button: Bag Slots"],
+    Face        = "Arial Narrow",
+    Height      = 14,
+    Outline     = "OUTLINE",
+    Monochrome  = false,
+  },
+}
+
+--- Options table to add to the settings.
+local OptionsTable = {
+  name = L["Toggle Button"],
+  desc = L["Set the Toggle Button properties."],
+  type = "group",
+  args = {
+    ToggleButtonPosition = {
+      order = 0,
+      name = L["Show Toggle Button"],
+      desc = L["Set if the button to toggle displayed Action Bar side should be visible or not."],
+      type = "select",
+      values = {
+        [M.TOGGLEBUTTONPOS.DISABLED]  = L["Disabled"],
+        [M.TOGGLEBUTTONPOS.LEFT]      = L["Left"],
+        [M.TOGGLEBUTTONPOS.RIGHT]     = L["Right"],
+      },
+    },
+    AutoSwitchOnCombat = {
+      order = 1,
+      name = L["Automatically Toggle on Entering Combat"],
+      desc = L["Compact Action Bar cannot be toggled while in combat due to Blizzard restrictions. Turn this option on if you want to automatically switch to the Action Bar upon entering combat."],
+      type = "toggle",
+      width = "full",
+    },
+    ToggleButtonBagSlots = {
+      order = 2,
+      name = L["Show the Number of Free Bag Slots"],
+      desc = L["Display the number of free bag slots on the Toggle Button."],
+      type = "toggle",
+      width = "full",
+    },
+  },
+}
 
 --- Default icons enum.
 local ICON = {
@@ -76,6 +136,28 @@ local function SetIsActionButtonIcon(IsActionIcon)
   M.ToggleButtonTexture:SetTexture(ButtonTexture)
 end
 
+--- Set the visibility of the toggle button.
+-- @tparam boolean IsVisible - Whether the button is visible or not.
+local function SetToggleButtonVisibility(IsVisible)
+  assert(type(IsVisible) == "boolean", "IsVisible must be a boolean.")
+
+  M.ToggleButtonFrame:SetShown(IsVisible)
+end
+
+--- Set the side at hich the button is shown.
+-- @tparam boolean InLeft - Will show the button on left side if 'true', otherwise on right.
+local function SetToggleButtonInLeft(InLeft)
+  assert(type(InLeft) == "boolean", "InLeft must be a boolean.")
+
+  M.ToggleButtonContainer:ClearAllPoints()
+
+  if (InLeft) then
+    M.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMLEFT", -21, 21)
+  else
+    M.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMRIGHT", 21, 21)
+  end
+end
+
 --- Set the visibility of free bag slots counter label.
 -- @tparam boolean IsVisible - Label visibility.
 local function SetBagSlotsCountVisibility(IsVisible)
@@ -90,10 +172,18 @@ local function SetBagSlotsCountText(Text)
   M.FreeBagSlotsCount:SetText(Text)
 end
 
+--- Set the properties of the bag slots counter label.
+-- @tparam table FontProperties - Properties of the font to set.
+local function SetBagSlotsCountFontProperties(FontProperties)
+  assert(type(FontProperties) == "table", "FontProperties must be a table.")
+
+  Options:ApplyFontProperties(M.FreeBagSlotsCount, FontProperties)
+end
+
 --- Catch a WoW interface event.
 -- @tparam table self - Event handling frame.
 -- @tparam string Event - Name of the caught event.
-function OnEvent(self, Event)
+local function OnEvent(self, Event)
   -- Entering combat
   if (Event == "PLAYER_REGEN_DISABLED") then
     M.IsInCombat = true
@@ -111,11 +201,20 @@ function OnEvent(self, Event)
   M:Update()
 end
 
---- Initialize the module.
--- @tparam number GameVersion - Current game version.
-function ToggleButton:Init(GameVersion)
-  assert(type(GameVersion) == "number", "GameVersion must be a number.")
+--- Listen to addon configuration update.
+local function OnConfigUpdate()
+  -- Settings
+  M.ToggleButtonPosition    = Options:Get("ToggleButtonPosition")
+  M.AutoSwitchOnCombat      = Options:Get("AutoSwitchOnCombat")
+  M.ShowBagSlotsCount       = Options:Get("ToggleButtonBagSlots")
 
+  SetBagSlotsCountFontProperties(Options:GetFontProperties("ToggleButtonBagCount"))
+
+  M:Update()
+end
+
+--- Initialize the module.
+function ToggleButton:Init()
   -- Togle button container
   self.ToggleButtonContainer = CreateFrame("Frame", "CompactActionBarToggleButtonContainer", MainMenuBar)
   self.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMRIGHT", 21, 21)
@@ -128,7 +227,7 @@ function ToggleButton:Init(GameVersion)
   local FrameTemplate = "ItemButtonTemplate"
 
   -- Retail uses a separate frame type for item buttons
-  if (GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
+  if (CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
     FrameType = "ItemButton"
     FrameTemplate = nil
   end
@@ -147,11 +246,18 @@ function ToggleButton:Init(GameVersion)
   self.FreeBagSlotsCount:SetScale(1 / self.ToggleButtonFrame:GetScale())
   SetBagSlotsCountText("48")
 
+  -- Configure module settings
+  Options:AddDefaults(DefaultSettings)
+  Options:AddFontProperties(DefaultFontProperties)
+  Options:AddOptionsTable(OptionsTable)
+  Options:AddListener(OnConfigUpdate)
+
   -- Init
   self.IsToggled            = false
+  self.IsToggleButtonShown  = true
   self.IsInCombat           = InCombatLockdown()
-  self.AutoSwitchOnCombat   = false
-  self.ShowBagSlotsCount    = true
+  self.AutoSwitchOnCombat   = DefaultSettings.AutoSwitchOnCombat
+  self.ShowBagSlotsCount    = DefaultSettings.ToggleButtonBagSlots
 
   -- Call self update if any of these events are fired
   local WatchedEvents = {
@@ -163,12 +269,18 @@ function ToggleButton:Init(GameVersion)
 
   CompactActionBar:ModuleSubscribeToEvents(self.ToggleButtonContainer, WatchedEvents, OnEvent)
 
+  -- Key bindings localisation
+  BINDING_NAME_COMPACTACTIONBAR_TOGGLEBUTTONS = L["Toggle Action Bar / Options"]
+
   -- Update
   self:Update()
 end
 
 --- Module global update.
 function ToggleButton:Update()
+  SetToggleButtonVisibility(self.ToggleButtonPosition ~= self.TOGGLEBUTTONPOS.DISABLED and M.IsToggleButtonShown)
+
+  -- Continue if not visible
   if (not self.ToggleButtonFrame:IsShown()) then return end
 
   -- Free bag slots
@@ -182,6 +294,7 @@ function ToggleButton:Update()
   -- Set appearance
   local IsButtonRed = ShowBagSlotsCount and FreeBagSlotsCount <= 0
 
+  SetToggleButtonInLeft(self.ToggleButtonPosition == self.TOGGLEBUTTONPOS.LEFT)
   SetButtonIsDesaturated(self.IsInCombat or IsButtonRed)
   SetButtonIsRed(IsButtonRed)
   SetIsActionButtonIcon(self.IsToggled)
@@ -217,48 +330,16 @@ function ToggleButton:InvertToggleState()
   PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
 end
 
---- Set the visibility of the toggle button.
+--- Set the visibility override of the button.
 -- @tparam boolean IsVisible - Whether the button is visible or not.
-function ToggleButton:SetToggleButtonVisibility(IsVisible)
-  assert(type(IsVisible) == "boolean", "IsVisible must be a boolean.")
-
-  self.ToggleButtonFrame:SetShown(IsVisible)
+function ToggleButton:SetShown(IsVisible)
+  self.IsToggleButtonShown = IsVisible
+  self:Update()
 end
 
---- Set the side at hich the button is shown.
--- @tparam boolean InLeft - Will show the button on left side if 'true', otherwise on right.
-function ToggleButton:SetToggleButtonInLeft(InLeft)
-  assert(type(InLeft) == "boolean", "InLeft must be a boolean.")
+--- Toggle between left and right section, called on configurable keybind press.
+function CompactActionBar_ToggleButton_InvertToggleState()
+  if (not M.IsToggleButtonShown) then return end
 
-  self.ToggleButtonContainer:ClearAllPoints()
-
-  if (InLeft) then
-    self.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMLEFT", -21, 21)
-  else
-    self.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMRIGHT", 21, 21)
-  end
-end
-
---- Set if the button should automatically toggle upon entering combat.
--- @tparam boolen AutoSwitch - If 'true', button will toggle when entering combat.
-function ToggleButton:SetAutoSwitchOnCombat(AutoSwitch)
-  assert(type(AutoSwitch) == "boolean", "AutoSwitch must be a boolean.")
-
-  self.AutoSwitchOnCombat = AutoSwitch
-end
-
---- Set visibility of the free bag slots counter.
--- @tparam boolean IsVisible - Whether the counter is visible or not.
-function ToggleButton:SetShowBagSlotsCount(IsVisible)
-  assert(type(IsVisible) == "boolean", "IsVisible must be a boolean.")
-
-  self.ShowBagSlotsCount = IsVisible
-end
-
---- Set the properties of the bag slots counter label.
--- @tparam table FontProperties - Properties of the font to set.
-function ToggleButton:SetBagSlotsCountText(FontProperties)
-  assert(type(FontProperties) == "table", "FontProperties must be a table.")
-
-  CompactActionBar:ApplyFontProperties(self.FreeBagSlotsCount, FontProperties)
+  M:InvertToggleState()
 end

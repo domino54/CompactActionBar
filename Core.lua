@@ -1,5 +1,6 @@
 ﻿local CompactActionBar = LibStub("AceAddon-3.0"):NewAddon("CompactActionBar")
-local Media = LibStub("LibSharedMedia-3.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("CompactActionBar")
+local Options = LibStub("LibSimpleOptions-1.0")
 
 --- Table of supported game versions.
 CompactActionBar.GAMEVERSION = {
@@ -13,13 +14,6 @@ CompactActionBar.COMPACTBARMODE = {
   DISABLED  = 0,  -- Long bar as default look of WoW Classic
   TOGGLE    = 1,  -- Shortened bar, left and right side toggled via button
   STACKED   = 2,  -- Shortened bar, left and right side above each other
-}
-
---- Table of possible toggle button positions.
-CompactActionBar.TOGGLEBUTTONPOS = {
-  DISABLED  = 0,  -- Hidden
-  LEFT      = 1,  -- Left side of the action bar
-  RIGHT     = 2,  -- Right side of the action bar
 }
 
 --- Table of available modules ready to be initialized.
@@ -91,37 +85,11 @@ function CompactActionBar:GetAndInitModule(ModuleName)
   return Module
 end
 
---- Apply font properties table to a FontString.
--- @tparam table FontString - Target FontString to apply font properties.
--- @tparam table FontProperties - Properties of the font.
-function CompactActionBar:ApplyFontProperties(FontString, FontProperties)
-  assert(type(FontString) == "table", "FontString must be a table.")
-  assert(type(FontProperties) == "table", "FontProperties must be a table.")
-  assert(type(FontProperties.Face) == "string", "FontProperties.Face must be a string.")
-  assert(type(FontProperties.Height) == "number", "FontProperties.Height must be a number.")
-  assert(type(FontProperties.Outline) == "string", "FontProperties.Outline must be a string.")
-  assert(type(FontProperties.Monochrome) == "boolean", "FontProperties.Monochrome must be a boolean.")
-
-  -- Create font flags string
-  local FontFlagsList = {}
-
-  if (FontProperties.Outline ~= "") then
-    table.insert(FontFlagsList, FontProperties.Outline)
-  end
-
-  if (FontProperties.Monochrome) then
-    table.insert(FontFlagsList, "MONOCHROME")
-  end
-
-  local FontFlags = table.concat(FontFlagsList, ", ")
-
-  FontString:SetFont(Media:Fetch("font", FontProperties.Face), FontProperties.Height, FontFlags)
-end
-
 --- Initialize the Compact Action Bar addon.
 function CompactActionBar:OnInitialize()
   self.GameVersion      = GetGameVersion()
-  self.Options          = self:GetAndInitModule("Options")
+  --self.Options          = self:GetAndInitModule("Options")
+  self.Presets          = self:GetAndInitModule("Presets")
   self.ToggleButton     = self:GetAndInitModule("ToggleButton")
   self.ButtonColors     = self:GetAndInitModule("ButtonColors")
 
@@ -131,10 +99,14 @@ function CompactActionBar:OnInitialize()
 
   -- Modules to load if running CLASSIC
   elseif (self.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC) then
-    self.LayoutManager  = self:GetAndInitModule("LayoutManager/Classic")
+    --self.LayoutManager  = self:GetAndInitModule("LayoutManager/Classic")
   end
 
-  self:Update()
+  --self.Options:BuildDatabaseAndOptions()
+  Options:Build("CompactActionBar", "CompactActionBarDB", L["Compact Action Bar"])
+
+  -- Key bindings localisation
+  BINDING_HEADER_COMPACTACTIONBAR = L["Compact Action Bar"]
 end
 
 --- Global update, called when a module requests a global update.
@@ -144,17 +116,17 @@ function CompactActionBar:Update()
   local LabelFontProperties = self.Options:Get("LabelFontProperties")
   local IsToggled = false
 
-  -- Update toggle button
+  -- Get the current toggle state
   if (self.ToggleButton ~= nil) then
     IsToggled = self.ToggleButton.IsToggled
+  end
 
-    self.ToggleButton:SetToggleButtonVisibility     (self.Options:Get("CompactBarMode") == CompactActionBar.COMPACTBARMODE.TOGGLE and self.Options:Get("ToggleButtonPosition") ~= CompactActionBar.TOGGLEBUTTONPOS.DISABLED)
-    self.ToggleButton:SetToggleButtonInLeft         (self.Options:Get("ToggleButtonPosition") == CompactActionBar.TOGGLEBUTTONPOS.LEFT)
-    self.ToggleButton:SetAutoSwitchOnCombat         (self.Options:Get("AutoSwitchOnCombat"))
-    self.ToggleButton:SetShowBagSlotsCount          (self.Options:Get("ToggleButtonBagSlots"))
-    self.ToggleButton:SetBagSlotsCountText          (LabelFontProperties["ToggleButtonBagCount"])
+  -- Set the toggle state in layout
+  --
 
-    self.ToggleButton:Update()
+  -- Set toggle button visibility
+  if (self.ToggleButton ~= nil) then
+    self.ToggleButton:SetShown(true)
   end
 
   -- Update layout manager
@@ -194,24 +166,5 @@ function CompactActionBar:Update()
     self.LayoutManager:SetReputationBarTextFont     (LabelFontProperties["ReputationBarText"])
 
     self.LayoutManager:Update()
-  end
-
-  -- Update button colors
-  if (self.ButtonColors) then
-    self.ButtonColors:SetIsFastUpdateMode           (self.Options:Get("EnableFastColorUpdates"))
-    self.ButtonColors:SetDesaturateOnCooldown       (self.Options:Get("DesaturateOnCooldown"))
-    self.ButtonColors:SetOutOfRangeColor            (self.Options:Get("OutOfRangeEnabled"),     self.Options:Get("OutOfRangeColor"))
-    self.ButtonColors:SetNotEnoughManaColor         (self.Options:Get("NotEnoughManaEnabled"),  self.Options:Get("NotEnoughManaColor"))
-    self.ButtonColors:SetManaAndRangeColor          (self.Options:Get("ManaAndRangeEnabled"),   self.Options:Get("ManaAndRangeColor"))
-    self.ButtonColors:SetUnusableColor              (self.Options:Get("UnusableActionEnabled"), self.Options:Get("UnusableActionColor"))
-  end
-end
-
---- Toggle between left and right section, called on configurable keybind press.
-function CompactActionBarToggleButtons()
-  if (CompactActionBar.Options:Get("CompactBarMode") ~= CompactActionBar.COMPACTBARMODE.TOGGLE) then return end
-
-  if (CompactActionBar.ToggleButton ~= nil) then
-    CompactActionBar.ToggleButton:InvertToggleState()
   end
 end

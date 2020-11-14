@@ -1,5 +1,5 @@
 <Bindings>
 	<Binding name="COMPACTACTIONBAR_TOGGLEBUTTONS" header="COMPACTACTIONBAR" category="ADDONS" default="CTRL-SPACE">
-		CompactActionBarToggleButtons()
+		CompactActionBar_ToggleButton_InvertToggleState()
 	</Binding>
 </Bindings>
