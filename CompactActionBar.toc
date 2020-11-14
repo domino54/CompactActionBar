@@ -19,5 +19,5 @@ Core.lua
 
 Modules\LayoutManager\Classic.lua
 Modules\ButtonColors.lua
-Modules\Options.lua
+Modules\Presets.lua
 Modules\ToggleButton.lua
