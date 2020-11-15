@@ -321,10 +321,7 @@ local function OnConfigUpdate()
 end
 
 --- Initialize the module.
--- @tparam number GameVersion - Current game version.
-function ButtonColors:Init(GameVersion)
-  assert(type(GameVersion) == "number", "GameVersion must be a number.")
-
+function ButtonColors:Init()
   -- Configure module settings
   Options:AddDefaults(DefaultSettings)
   Options:AddOptionsTable(OptionsTable)
@@ -343,7 +340,7 @@ function ButtonColors:Init(GameVersion)
   SetColor("Unusable",   DefaultSettings.UnusableActionEnabled,  DefaultSettings.UnusableActionColor)
 
   -- Hook action button functions - retail
-  if (GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
+  if (CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
     local Frame = EnumerateFrames()
 
     while Frame do
@@ -360,7 +357,7 @@ function ButtonColors:Init(GameVersion)
     PeriodicUpdate()
 
   -- Hook action button functions - Classic
-  elseif (GameVersion == CompactActionBar.GAMEVERSION.CLASSIC) then
+  elseif (CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC) then
     hooksecurefunc("ActionButton_OnUpdate", ActionButton_OnUpdate)
     hooksecurefunc("ActionButton_UpdateUsable", ActionButton_UpdateUsable)
   end

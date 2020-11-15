@@ -4,7 +4,7 @@ local CompactActionBar = LibStub("AceAddon-3.0"):GetAddon("CompactActionBar")
 -- Handles the positioning of the action bar elements on the screen.
 -- @module LayoutManager
 -- @alias M
-local LayoutManager, M = CompactActionBar:CreateModule("LayoutManager/Classic")
+local LayoutManager, M = CompactActionBar:CreateModule("LayoutManager")
 
 --- Table of possible toggle states od the action bar.
 local TOGGLESTATE = {

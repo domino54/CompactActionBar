@@ -88,18 +88,10 @@ end
 --- Initialize the Compact Action Bar addon.
 function CompactActionBar:OnInitialize()
   self.GameVersion      = GetGameVersion()
-  --self.Options          = self:GetAndInitModule("Options")
-  self.Presets          = self:GetAndInitModule("Presets")
-  self.ToggleButton     = self:GetAndInitModule("ToggleButton")
-  self.ButtonColors     = self:GetAndInitModule("ButtonColors")
 
-  -- Modules to load if running RETAIL
-  if (self.GameVersion == CompactActionBar.GAMEVERSION.RETAIL) then
-    --self.LayoutManager  = self.GetAndInitModule("LayoutManager/Retail")
-
-  -- Modules to load if running CLASSIC
-  elseif (self.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC) then
-    --self.LayoutManager  = self:GetAndInitModule("LayoutManager/Classic")
+  --- Initialize the created modules.
+  for ModuleName, Module in pairs(self.Modules) do
+    Module:Init()
   end
 
   --self.Options:BuildDatabaseAndOptions()
@@ -130,6 +122,7 @@ function CompactActionBar:Update()
   end
 
   -- Update layout manager
+  --[[
   if (self.LayoutManager ~= nil) then
     -- Compact Bar Mode
     self.LayoutManager:SetCompactBarMode            (self.Options:Get("CompactBarMode"))
@@ -167,4 +160,5 @@ function CompactActionBar:Update()
 
     self.LayoutManager:Update()
   end
+  ]]
 end

@@ -17,7 +17,4 @@ Locales\Locales.xml
 
 Core.lua
 
-Modules\LayoutManager\Classic.lua
-Modules\ButtonColors.lua
-Modules\Presets.lua
-Modules\ToggleButton.lua
+Modules\Modules.xml
