@@ -1,4 +1,6 @@
 local CompactActionBar = LibStub("AceAddon-3.0"):GetAddon("CompactActionBar")
+local Options = LibStub("LibSimpleOptions-1.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("CompactActionBar")
 
 --- Layout Manager: Classic module
 -- Handles the positioning of the action bar elements on the screen.
@@ -6,12 +8,281 @@ local CompactActionBar = LibStub("AceAddon-3.0"):GetAddon("CompactActionBar")
 -- @alias M
 local LayoutManager, M = CompactActionBar:CreateModule("LayoutManager")
 
---- Table of possible toggle states od the action bar.
-local TOGGLESTATE = {
-  NONE  = 0,    -- None of the sides visible
-  LEFT  = 1,    -- Left side container visible
-  RIGHT = 2,    -- Right side container visible
-  BOTH  = 3,    -- Both sides visible
+--- Table of available bar modes.
+M.COMPACTBARMODE = {
+  DISABLED  = 0,  -- Long bar as default look of WoW Classic
+  TOGGLE    = 1,  -- Shortened bar, left and right side toggled via button
+  STACKED   = 2,  -- Shortened bar, left and right side above each other
+}
+
+--- Default settings of the module.
+local DefaultSettings = {
+  -- Layout options
+  CompactBarMode          = M.COMPACTBARMODE.TOGGLE,
+  IncludeBarSwitcher      = false,
+  -- Action bar properties
+  MainMenuBarScale        = 0.9,
+  MainMenuBarOpacity      = 1.0,
+  MainMenuBarOffsetX      = 0.0,
+  MainMenuBarOffsetY      = 0.0,
+  MainMenuTextureOpacity  = 1.0,
+  MainMenuBarStrata       = "MEDIUM",
+  -- Experience bar
+  ExperienceBarAtBottom   = false,
+  ExperienceBarHeight     = 10.0,
+  ReputationBarHeight     = 7.0,
+  XPBarTextureOpacity     = 1.0,
+  -- Multi bars stacking
+  StackMultiBarLeft       = false,
+  StackMultiBarRight      = false,
+  -- End caps
+  EndCapsTextureScale     = 1.0,
+  EndCapsTextureOpacity   = 1.0,
+  EndCapsTextureStyle     = "Dwarf",
+}
+
+--- Default properties of the module's fonts.
+local DefaultFontProperties = {
+  ActionButtonName = {
+    Name        = L["Action Button: Name"],
+    Face        = "Friz Quadrata TT",
+    Height      = 10,
+    Outline     = "",
+    Monochrome  = false,
+  },
+  ActionButtonHotKey = {
+    Name        = L["Action Button: Hotkey"],
+    Face        = "Arial Narrow",
+    Height      = 12,
+    Outline     = "OUTLINE",
+    Monochrome  = false,
+  },
+  ActionButtonCount = {
+    Name        = L["Action Button: Count"],
+    Face        = "Arial Narrow",
+    Height      = 14,
+    Outline     = "OUTLINE",
+    Monochrome  = false,
+  },
+  ExperienceBarText = {
+    Name        = L["Experience Bar Text"],
+    Face        = "Friz Quadrata TT",
+    Height      = 10,
+    Outline     = "OUTLINE",
+    Monochrome  = false,
+  },
+  ReputationBarText = {
+    Name        = L["Reputation Bar Text"],
+    Face        = "Friz Quadrata TT",
+    Height      = 10,
+    Outline     = "OUTLINE",
+    Monochrome  = false,
+  },
+}
+
+--- Active Compact Action Bar mode.
+local OptionsTable_CompactBarMode = {
+  name = L["Compact Bar Mode"],
+  desc = L["Set the layout of Compact Action Bar."],
+  type = "group",
+  args = {
+    CompactBarMode = {
+      order = 0,
+      name = L["Compact Action Bar Mode"],
+      desc = L["Type of the Compact Action Bar layout. \"Disabled\" keeps the original look of WoW Classic, \"Toggle\" shows one side at a time, and \"Stacked\" shows both, left on top of the right."],
+      type = "select",
+      values = {
+        [M.COMPACTBARMODE.DISABLED]   = L["Disabled"],
+        [M.COMPACTBARMODE.TOGGLE]     = L["Toggle"],
+        [M.COMPACTBARMODE.STACKED]    = L["Stacked"],
+      },
+    },
+    IncludeBarSwitcher = {
+      order = 2,
+      name = L["Show Action Bar Page Switch"],
+      desc = L["If enabled, buttons to switch the Action Bar pages will display together with Action Buttons, similarly to where they are in Retail."],
+      type = "toggle",
+      width = "full",
+      disabled = function() return Options:Get("CompactBarMode") ~= M.COMPACTBARMODE.TOGGLE end,
+    },
+  },
+}
+
+--- Position, scale and opacity of the action bar.
+local OptionsTable_ActionBarPosition = {
+  name = L["Position & Scale"],
+  desc = L["Rescale and offset the Action Bar."],
+  type = "group",
+  args = {
+    MainMenuBarScale = {
+      order = 0,
+      name = L["Action Bar Scale"],
+      desc = L["Controls the overall scale of the Action Bar."],
+      type = "range",
+      width = "full",
+      min = 0.25,
+      softMax = 1.75,
+      max = 5,
+    },
+    MainMenuBarOffsetX = {
+      order = 1,
+      name = L["Action Bar Offset X"],
+      desc = L["Move the Action Bar horizontally."],
+      type = "range",
+      width = "full",
+      min = -2048,
+      softMin = -1024,
+      softMax = 1024,
+      max = 2048,
+      step = 0.01,
+    },
+    MainMenuBarOffsetY = {
+      order = 2,
+      name = "Action Bar Offset Y",
+      desc = L["Move the Action Bar vertically."],
+      type = "range",
+      width = "full",
+      min = -512,
+      softMin = 0,
+      max = 256,
+    },
+    MainMenuBarOpacity = {
+      order = 3,
+      name = L["Action Bar Opacity"],
+      desc = L["Controls the overall opacity of the Action Bar."],
+      type = "range",
+      width = "full",
+      min = 0,
+      max = 1,
+    },
+    MainMenuTextureOpacity = {
+      order = 4,
+      name = L["Background Opacity"],
+      desc = L["Opacity of the Action Bar background textures."],
+      type = "range",
+      width = "full",
+      min = 0,
+      max = 1,
+    },
+    MainMenuBarStrata = {
+      order = 5,
+      name = L["Action Bar Strata"],
+      desc = L["Strata controls at which interface layer the Action Bar is rendered. Adjust this if you want the Action Bar to appear above or below other elements of the interface."],
+      type = "select",
+      values = Options.StrataValues,
+      sorting = Options.StrataSorting,
+    },
+  },
+}
+
+--- Height, position and opacity of the experience and reputation bars.
+local OptionsTable_ExperienceBar = {
+  name = L["Experience Bar"],
+  desc = L["Customize the Experience and Reputation bars."],
+  type = "group",
+  args = {
+    ExperienceBarHeight = {
+      order = 0,
+      name = L["Experience Bar Height"],
+      desc = L["Adjust the height of the Experience Bar. This also controls the height of Reputation Bar if the character is at the maximum level."],
+      type = "range",
+      width = "full",
+      min = 5,
+      max = 30,
+    },
+    ReputationBarHeight = {
+      order = 1,
+      name = L["Reputation Bar Height"],
+      desc = L["Adjust the height of Reputation Bar."],
+      type = "range",
+      width = "full",
+      min = 5,
+      max = 30,
+    },
+    XPBarTextureOpacity = {
+      order = 2,
+      name = L["Overlay Textures Opacity"],
+      desc = L["Sets the opacity of \"ticks\" overlay texture of the Experience and Reputation Bars."],
+      type = "range",
+      width = "full",
+      min = 0,
+      max = 1,
+    },
+    ExperienceBarAtBottom = {
+      order = 3,
+      name = L["Experience & Reputation Bars Below Action Buttons"],
+      desc = L["Allows the bars to be relocated under the Action Buttons, similarly to where they normally are in Retail."],
+      type = "toggle",
+      width = "full",
+    },
+  },
+}
+
+--- Stacking of the multi action bars from the right side of the screen.
+local OptionsTable_MultiBarStacking = {
+  name = L["Right Bars Stacking"],
+  desc = L["Stack the bars from the right side of your screen."],
+  desc = "",
+  type = "group",
+  args = {
+    StackingInfo = {
+      order = 0,
+      name = L["You can choose to move the Right Action Bars 1 & 2 off the right side of your screen and stack them above the Bottom Left and Bottom Right Action Bars instead."],
+      type = "description",
+    },
+    StackMultiBarLeft = {
+      order = 1,
+      name = L["Stack Right Action Bar 1"],
+      desc = L["Toggles stacking of Right Action Bar 1 above the Bottom Right Action Bar."],
+      type = "toggle",
+      width = "full",
+    },
+    StackMultiBarRight = {
+      order = 2,
+      name = L["Stack Right Action Bar 2"],
+      desc = L["Toggles stacking of Right Action Bar 2 above the Bottom Left Action Bar."],
+      type = "toggle",
+      width = "full",
+    },
+  },
+}
+
+--- Customization options for the end caps.
+local OptionsTable_EndCaps = {
+  name = L["End Caps"],
+  desc = L["Also known as Gryphons."],
+  type = "group",
+  args = {
+    EndCapsTextureScale = {
+      order = 0,
+      name = L["End Caps Scale"],
+      desc = L["Scale of the End Caps textures."],
+      type = "range",
+      width = "full",
+      min = 0.25,
+      softMax = 1.75,
+      max = 5,
+    },
+    EndCapsTextureOpacity = {
+      order = 1,
+      name = L["End Caps Opacity"],
+      desc = L["Opacity of the End Caps textures."],
+      type = "range",
+      width = "full",
+      min = 0,
+      max = 1,
+    },
+    EndCapsTextureStyle = {
+      order = 2,
+      name = L["End Caps Style"],
+      desc = L["Did you know there's an unused texture for the End Caps resembling lions? Every playable race was supposed to use its own style of the End Caps, lions in case of humans and gryphons in case of dwarves. Gryphons stuck as the texture for every WoW race."],
+      type = "select",
+      values = {
+        ["Dwarf"] = L["Dwarf"],
+        ["Human"] = L["Human"],
+      },
+    },
+  },
 }
 
 --- Path to the replacement experience bar texture file.
@@ -167,6 +438,7 @@ local function InitContainersLayout(PageSwitchInLeft)
     CompactActionBarLeftBarFrame = {
       MainMenuBarTexture0,
       MainMenuBarTexture1,
+      --[[ Don't add buttons to prevent breaking stance bars
       ActionButton1,
       ActionButton2,
       ActionButton3,
@@ -179,6 +451,7 @@ local function InitContainersLayout(PageSwitchInLeft)
       ActionButton10,
       ActionButton11,
       ActionButton12,
+      ]]
     },
 
     -- Right frame children
@@ -354,14 +627,16 @@ end
 
 --- Set the arrangement of the left and right Compact Action Bar containers.
 -- @tparam number ActionBarMode - Current action bar mode.
-local function SetContainersArrangement(ActionBarMode)
+-- @tparam boolean IsToggled - If the bar is toggled or not.
+local function SetContainersArrangement(ActionBarMode, IsToggled)
   assert(type(ActionBarMode) == "number", "ActionBarMode must be a number.")
+  assert(type(IsToggled) == "boolean", "IsToggled must be a boolean.")
 
   M.CompactActionBarLeftBarFrame:ClearAllPoints()
   M.CompactActionBarRightBarFrame:ClearAllPoints()
 
   -- Full bar, stack horizontally
-  if (ActionBarMode == CompactActionBar.COMPACTBARMODE.DISABLED) then
+  if (ActionBarMode == M.COMPACTBARMODE.DISABLED) then
     M.CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
     M.CompactActionBarRightBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarLeftBarFrame, "BOTTOMRIGHT", 0, 0)
 
@@ -369,15 +644,26 @@ local function SetContainersArrangement(ActionBarMode)
     M.CompactActionBarContainer:SetHeight(M.CompactActionBarLeftBarFrame:GetHeight())
 
   -- Compact bar in toggle mode
-  elseif (ActionBarMode == CompactActionBar.COMPACTBARMODE.TOGGLE) then
-    M.CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
-    M.CompactActionBarRightBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
+  elseif (ActionBarMode == M.COMPACTBARMODE.TOGGLE) then
+    -- Right container
+    if (IsToggled) then
+      M.CompactActionBarLeftBarFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 10000, -10000)
+      M.CompactActionBarRightBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
 
-    M.CompactActionBarContainer:SetWidth(M.CompactActionBarLeftBarFrame:GetWidth())
-    M.CompactActionBarContainer:SetHeight(M.CompactActionBarLeftBarFrame:GetHeight())
+      M.CompactActionBarContainer:SetWidth(M.CompactActionBarRightBarFrame:GetWidth())
+      M.CompactActionBarContainer:SetHeight(M.CompactActionBarRightBarFrame:GetHeight())
+
+    -- Left container
+    else
+      M.CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
+      M.CompactActionBarRightBarFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 10000, -10000)
+
+      M.CompactActionBarContainer:SetWidth(M.CompactActionBarLeftBarFrame:GetWidth())
+      M.CompactActionBarContainer:SetHeight(M.CompactActionBarLeftBarFrame:GetHeight())
+    end
 
   -- Bars stacked vertically
-  elseif (ActionBarMode == CompactActionBar.COMPACTBARMODE.STACKED) then
+  elseif (ActionBarMode == M.COMPACTBARMODE.STACKED) then
     M.CompactActionBarRightBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarContainer, "BOTTOMLEFT", 0, 0)
     M.CompactActionBarLeftBarFrame:SetPoint("BOTTOMLEFT", M.CompactActionBarRightBarFrame, "TOPLEFT", 0, 0)
 
@@ -449,7 +735,7 @@ local function UpdateActionBarArrangement()
   local GlobalAnchorOffsetY = 0
   local RightAnchorOffsetX = 512
 
-  if (M.CompactBarMode ~= CompactActionBar.COMPACTBARMODE.DISABLED) then
+  if (M.CompactBarMode ~= M.COMPACTBARMODE.DISABLED) then
     RightAnchorOffsetX = 0
   end
 
@@ -523,7 +809,7 @@ local function UpdateActionBarArrangement()
     LeftAnchorOffsetY = LeftAnchorOffsetY + MultiBarBottomLeft:GetHeight() + 4
   end
 
-  if (M.CompactBarMode ~= CompactActionBar.COMPACTBARMODE.DISABLED) then
+  if (M.CompactBarMode ~= M.COMPACTBARMODE.DISABLED) then
     RightAnchorOffsetY = LeftAnchorOffsetY
   end
 
@@ -552,7 +838,7 @@ local function UpdateActionBarArrangement()
     MultiBarRight:SetPoint("TOPRIGHT", VerticalMultiBarsContainer, "TOPRIGHT", 0, 0)
   end
 
-  if (M.CompactBarMode ~= CompactActionBar.COMPACTBARMODE.DISABLED) then
+  if (M.CompactBarMode ~= M.COMPACTBARMODE.DISABLED) then
     LeftAnchorOffsetY = RightAnchorOffsetY
   end
 
@@ -600,13 +886,116 @@ local function UpdateActionBarArrangement()
   end
 end
 
---- Set the current toggle state of the bars.
--- @tparam number ToggleState - Current toggle state.
-local function SetToggleState(ToggleState)
-  assert(type(ToggleState) == "number", "ToggleState must be a number.")
+--- Set the scale of the main menu bar.
+-- @tparam number Scale - Scale of the bar, 'number' greater than 0.
+local function SetMainMenuBarScale(Scale)
+  assert(type(Scale) == "number", "Scale must be a number.")
+  assert(Scale > 0, "Scale must be greater than 0.")
 
-  M.CompactActionBarLeftBarFrame:SetShown(ToggleState == TOGGLESTATE.BOTH or ToggleState == TOGGLESTATE.LEFT)
-  M.CompactActionBarRightBarFrame:SetShown(ToggleState == TOGGLESTATE.BOTH or ToggleState == TOGGLESTATE.RIGHT)
+  MainMenuBar:SetScale(Scale)
+end
+
+--- Set the opacity of the main menu bar.
+-- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
+local function SetMainMenuBarOpacity(Opacity)
+  assert(type(Opacity) == "number", "Opacity must be a number.")
+  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
+
+  MainMenuBar:SetAlpha(Opacity)
+end
+
+--- Set the offset of the main menu bar.
+-- @tparam number OffsetX - Horizontal offset.
+-- @tparam number OffsetY - Vertical offset.
+local function SetMainMenuBarOffset(OffsetX, OffsetY)
+  assert(type(OffsetX) == "number", "OffsetX must be a number.")
+  assert(type(OffsetY) == "number", "OffsetY must be a number.")
+
+  M.CompactActionBarOffset:SetPoint("BOTTOM", UIParent, "BOTTOM", OffsetX, OffsetY)
+end
+
+--- Set the strata of the main menu bar frame.
+-- @tparam string Strata - A strata value.
+local function SetMainMenuBarStrata(Strata)
+  assert(type(Strata) == "string", "Strata must be a string.")
+
+  MainMenuBar:SetFrameStrata(Strata)
+end
+
+--- Set the opacity of the main menu bar background textures.
+-- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
+local function SetMainMenuTextureOpacity(Opacity)
+  assert(type(Opacity) == "number", "Opacity must be a number.")
+  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
+
+  local Textures = {
+    M.PageSwitchTexture,
+    M.MiniButtonsExtendedTexture0,
+    M.MiniButtonsExtendedTexture1,
+  }
+
+  for i = 0, 3 do
+    table.insert(Textures, _G["MainMenuBarTexture"..i])
+    table.insert(Textures, _G["MainMenuMaxLevelBar"..i])
+  end
+
+  SetTexturesOpacity(Textures, Opacity)
+end
+
+--- Set the opacity of the experience and reputation bars overlay texture.
+-- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
+local function SetXPBarTextureOpacity(Opacity)
+  assert(type(Opacity) == "number", "Opacity must be a number.")
+  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
+
+  local Textures = {}
+
+  for i = 0, 3 do
+    table.insert(Textures, ReputationWatchBar.StatusBar["WatchBarTexture"..i])
+    table.insert(Textures, ReputationWatchBar.StatusBar["XPBarTexture"..i])
+    table.insert(Textures, _G["MainMenuXPBarTexture"..i])
+  end
+
+  SetTexturesOpacity(Textures, Opacity)
+end
+
+--- Set the style of the main menu bar end caps.
+-- @tparam string TextureStyle - Style of the end caps, must be either 'Dwarf' or 'Human'.
+local function SetMainMenuBarTextureStyle(TextureStyle)
+  assert(type(TextureStyle) == "string", "TextureStyle must be a string.")
+  assert(TextureStyle == "Dwarf" or TextureStyle == "Human", "TextureStyle must be one of: \"Dwarf\", \"Human\".")
+
+  local EndCapTexture = "Interface\\MainMenuBar\\UI-MainMenuBar-EndCap-"..TextureStyle
+  MainMenuBarLeftEndCap:SetTexture(EndCapTexture)
+  MainMenuBarRightEndCap:SetTexture(EndCapTexture)
+
+  local MainMenuBarTexture = "Interface\\MainMenuBar\\UI-MainMenuBar-"..TextureStyle
+  MainMenuBarTexture0:SetTexture(MainMenuBarTexture)
+  MainMenuBarTexture1:SetTexture(MainMenuBarTexture)
+end
+
+--- Set the opacity of the main menu bar end caps.
+-- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
+local function SetEndCapsTextureOpacity(Opacity)
+  assert(type(Opacity) == "number", "Opacity must be a number.")
+  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
+
+  local Textures = {
+    MainMenuBarLeftEndCap,
+    MainMenuBarRightEndCap,
+  }
+
+  SetTexturesOpacity(Textures, Opacity)
+end
+
+--- Set the scale of the main menu bar end caps.
+-- @tparam number Scale - Scale of the bar, 'number' greater than 0.
+local function SetEndCapsTextureScale(Scale)
+  assert(type(Scale) == "number", "Scale must be a number.")
+  assert(Scale > 0, "Scale must be greater than 0.")
+
+  MainMenuBarLeftEndCap:SetScale(Scale)
+  MainMenuBarRightEndCap:SetScale(Scale)
 end
 
 --- Set the properties of an action button label.
@@ -635,9 +1024,39 @@ local function SetActionButtonFont(LabelType, FontProperties)
     for i = 1, ButtonCount do
       local ActionButtonHotKey = _G[ButtonType..i..LabelType]
 
-      CompactActionBar:ApplyFontProperties(ActionButtonHotKey, FontProperties)
+      Options:ApplyFontProperties(ActionButtonHotKey, FontProperties)
     end
   end
+end
+
+--- Set the properties of the action button count label font.
+-- @tparam table FontProperties - Properties of the font.
+local function SetActionButtonCountFont(FontProperties)
+  SetActionButtonFont("Count", FontProperties)
+end
+
+--- Set the properties of the action button hotkey label font.
+-- @tparam table FontProperties - Properties of the font.
+local function SetActionButtonHotKeyFont(FontProperties)
+  SetActionButtonFont("HotKey", FontProperties)
+end
+
+--- Set the properties of the action button name label font.
+-- @tparam table FontProperties - Properties of the font.
+local function SetActionButtonNameFont(FontProperties)
+  SetActionButtonFont("Name", FontProperties)
+end
+
+--- Set the properties of the experience bar text label font.
+-- @tparam table FontProperties - Properties of the font.
+local function SetExperienceBarTextFont(FontProperties)
+  Options:ApplyFontProperties(MainMenuBarExpText, FontProperties)
+end
+
+--- Set the properties of the reputation bar text label font.
+-- @tparam table FontProperties - Properties of the font.
+local function SetReputationBarTextFont(FontProperties)
+  Options:ApplyFontProperties(ReputationWatchBar.OverlayFrame.Text, FontProperties)
 end
 
 --- Catch a WoW interface event.
@@ -647,34 +1066,88 @@ function OnEvent(self, Event)
   M:Update()
 end
 
+--- Listen to addon configuration update.
+local function OnConfigUpdate()
+  -- Layout options
+  M.CompactBarMode            = Options:Get("CompactBarMode")
+  M.PageSwitchInLeft          = Options:Get("IncludeBarSwitcher")
+
+  -- Action bar properties
+  SetMainMenuBarScale         (Options:Get("MainMenuBarScale"))
+  SetMainMenuBarOpacity       (Options:Get("MainMenuBarOpacity"))
+  SetMainMenuBarOffset        (Options:Get("MainMenuBarOffsetX"), Options:Get("MainMenuBarOffsetY"))
+  SetMainMenuTextureOpacity   (Options:Get("MainMenuTextureOpacity"))
+  SetMainMenuBarStrata        (Options:Get("MainMenuBarStrata"))
+
+  -- Experience bar
+  M.ExperienceBarAtBottom     = Options:Get("ExperienceBarAtBottom")
+  M.ExperienceBarHeight       = Options:Get("ExperienceBarHeight")
+  M.ReputationBarHeight       = Options:Get("ReputationBarHeight")
+  SetXPBarTextureOpacity      (Options:Get("XPBarTextureOpacity"))
+
+  -- Multi bars stacking
+  M.StackMultiBarLeft         = Options:Get("StackMultiBarLeft")
+  M.StackMultiBarRight        = Options:Get("StackMultiBarRight")
+
+  -- End caps
+  SetEndCapsTextureScale      (Options:Get("EndCapsTextureScale"))
+  SetEndCapsTextureOpacity    (Options:Get("EndCapsTextureOpacity"))
+  SetMainMenuBarTextureStyle  (Options:Get("EndCapsTextureStyle"))
+
+  --SetBagSlotsCountFontProperties(Options:GetFontProperties("ToggleButtonBagCount"))
+
+--- Default properties of the module's fonts.
+  SetActionButtonHotKeyFont   (Options:GetFontProperties("ActionButtonHotKey"))
+  SetActionButtonNameFont     (Options:GetFontProperties("ActionButtonName"))
+  SetActionButtonCountFont    (Options:GetFontProperties("ActionButtonCount"))
+  SetExperienceBarTextFont    (Options:GetFontProperties("ExperienceBarText"))
+  SetReputationBarTextFont    (Options:GetFontProperties("ReputationBarText"))
+
+  CompactActionBar:Update()
+end
+
 --- Initialize the module.
 function LayoutManager:Init()
+
+  Options:AddDefaults(DefaultSettings)
+  Options:AddFontProperties(DefaultFontProperties)
+  Options:AddOptionsTable(OptionsTable_CompactBarMode)
+  Options:AddOptionsTable(OptionsTable_ActionBarPosition)
+  Options:AddOptionsTable(OptionsTable_ExperienceBar)
+  Options:AddOptionsTable(OptionsTable_MultiBarStacking)
+  Options:AddOptionsTable(OptionsTable_EndCaps)
+  Options:AddListener(OnConfigUpdate)
+
   -- Init layout
   CreateMainMenuBarContainers()
   InitExperienceAndReputationBarsLayout()
 
-  -- Default settings
-  self:SetCompactBarMode(CompactActionBar.COMPACTBARMODE.DISABLED)
-  self:SetPageSwitchInLeft(false)
-  self:SetIsActionBarToggled(false)
+  -- Layout options
+  M.CompactBarMode            = DefaultSettings.CompactBarMode
+  M.PageSwitchInLeft          = DefaultSettings.IncludeBarSwitcher
+  M.IsActionBarToggled        = false
 
-  self:SetMainMenuBarScale(1.0)
-  self:SetMainMenuBarOpacity(1.0)
-  self:SetMainMenuBarOffset(0.0, 0.0)
-  self:SetMainMenuBarStrata("MEDIUM")
-  self:SetMainMenuTextureOpacity(1.0)
+  -- Action bar properties
+  SetMainMenuBarScale         (DefaultSettings.MainMenuBarScale)
+  SetMainMenuBarOpacity       (DefaultSettings.MainMenuBarOpacity)
+  SetMainMenuBarOffset        (DefaultSettings.MainMenuBarOffsetX, DefaultSettings.MainMenuBarOffsetY)
+  SetMainMenuTextureOpacity   (DefaultSettings.MainMenuTextureOpacity)
+  SetMainMenuBarStrata        (DefaultSettings.MainMenuBarStrata)
 
-  self:SetExperienceBarHeight(10.0)
-  self:SetReputationBarHeight(7.0)
-  self:SetExperienceBarAtBottom(false)
-  self:SetXPBarTextureOpacity(1.0)
+  -- Experience bar
+  M.ExperienceBarAtBottom     = DefaultSettings.ExperienceBarAtBottom
+  M.ExperienceBarHeight       = DefaultSettings.ExperienceBarHeight
+  M.ReputationBarHeight       = DefaultSettings.ReputationBarHeight
+  SetXPBarTextureOpacity      (DefaultSettings.XPBarTextureOpacity)
 
-  self:SetStackMultiBarLeft(false)
-  self:SetStackMultiBarRight(false)
+  -- Multi bars stacking
+  M.StackMultiBarLeft         = DefaultSettings.StackMultiBarLeft
+  M.StackMultiBarRight        = DefaultSettings.StackMultiBarRight
 
-  self:SetMainMenuBarTextureStyle("Dwarf")
-  self:SetEndCapsTextureOpacity(1.0)
-  self:SetEndCapsTextureScale(1.0)
+  -- End caps
+  SetEndCapsTextureScale      (DefaultSettings.EndCapsTextureScale)
+  SetEndCapsTextureOpacity    (DefaultSettings.EndCapsTextureOpacity)
+  SetMainMenuBarTextureStyle  (DefaultSettings.EndCapsTextureStyle)
 
   -- Call self update if any of these events are fired
   local WatchedEvents = {
@@ -697,7 +1170,6 @@ function LayoutManager:Init()
     "PET_BAR_HIDEGRID",
     "PET_BAR_SHOWGRID",
     "PET_BAR_UPDATE_COOLDOWN",
-    "BAG_UPDATE",
   }
 
   CompactActionBar:ModuleSubscribeToEvents(self.CompactActionBarContainer, WatchedEvents, OnEvent)
@@ -714,228 +1186,15 @@ end
 function LayoutManager:Update()
   if (InCombatLockdown()) then return end
 
-  local ToggleState = TOGGLESTATE.BOTH
-  local IsToggleMode = self.CompactBarMode == CompactActionBar.COMPACTBARMODE.TOGGLE
+  local ToggleButton = CompactActionBar:GetModule("ToggleButton")
 
-  if (IsToggleMode) then
-    if (self.IsActionBarToggled) then
-      ToggleState = TOGGLESTATE.RIGHT
-    else
-      ToggleState = TOGGLESTATE.LEFT
-    end
+  --- Set toggle state based on Toggle Button module.
+  if (ToggleButton ~= nil) then
+    self.IsActionBarToggled = ToggleButton.IsToggled
   end
 
-  InitContainersLayout(IsToggleMode and self.PageSwitchInLeft)
-  SetContainersArrangement(self.CompactBarMode)
-  SetToggleState(ToggleState)
+  InitContainersLayout(self.CompactBarMode == M.COMPACTBARMODE.TOGGLE and self.PageSwitchInLeft)
+  SetContainersArrangement(self.CompactBarMode, self.IsActionBarToggled)
   SetXPBarTexturesWidth(self.CompactActionBarLeftBarFrame:GetWidth() / 2)
   UpdateActionBarArrangement()
-end
-
---- Set the scale of the main menu bar.
--- @tparam number Scale - Scale of the bar, 'number' greater than 0.
-function LayoutManager:SetMainMenuBarScale(Scale)
-  assert(type(Scale) == "number", "Scale must be a number.")
-  assert(Scale > 0, "Scale must be greater than 0.")
-
-  MainMenuBar:SetScale(Scale)
-end
-
---- Set the opacity of the main menu bar.
--- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
-function LayoutManager:SetMainMenuBarOpacity(Opacity)
-  assert(type(Opacity) == "number", "Opacity must be a number.")
-  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
-
-  MainMenuBar:SetAlpha(Opacity)
-end
-
---- Set the offset of the main menu bar.
--- @tparam number OffsetX - Horizontal offset.
--- @tparam number OffsetY - Vertical offset.
-function LayoutManager:SetMainMenuBarOffset(OffsetX, OffsetY)
-  assert(type(OffsetX) == "number", "OffsetX must be a number.")
-  assert(type(OffsetY) == "number", "OffsetY must be a number.")
-
-  self.CompactActionBarOffset:SetPoint("BOTTOM", UIParent, "BOTTOM", OffsetX, OffsetY)
-end
-
---- Set the strata of the main menu bar frame.
--- @tparam string Strata - A strata value.
-function LayoutManager:SetMainMenuBarStrata(Strata)
-  assert(type(Strata) == "string", "Strata must be a string.")
-
-  MainMenuBar:SetFrameStrata(Strata)
-end
-
---- Set the opacity of the main menu bar background textures.
--- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
-function LayoutManager:SetMainMenuTextureOpacity(Opacity)
-  assert(type(Opacity) == "number", "Opacity must be a number.")
-  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
-
-  local Textures = {
-    self.PageSwitchTexture,
-    self.MiniButtonsExtendedTexture0,
-    self.MiniButtonsExtendedTexture1,
-  }
-
-  for i = 0, 3 do
-    table.insert(Textures, _G["MainMenuBarTexture"..i])
-    table.insert(Textures, _G["MainMenuMaxLevelBar"..i])
-  end
-
-  SetTexturesOpacity(Textures, Opacity)
-end
-
---- Set the current compact bar mode.
--- @tparam number CompactBarMode - Active Compact Action Bar mode.
-function LayoutManager:SetCompactBarMode(CompactBarMode)
-  assert(type(CompactBarMode) == "number", "CompactBarMode must be a number.")
-
-  self.CompactBarMode = CompactBarMode
-end
-
---- Set if the action bar page switch should appear with action buttons or not.
--- @tparam boolean PageSwitchInLeft - If the action bar page switch should appear with action buttons, similarly to retail.
-function LayoutManager:SetPageSwitchInLeft(PageSwitchInLeft)
-  assert(type(PageSwitchInLeft) == "boolean", "PageSwitchInLeft must be a boolean.")
-
-  self.PageSwitchInLeft = PageSwitchInLeft
-end
-
---- Set if the action bar is toggled to the micro buttons and bags view or not.
--- @tparam boolean IsActionBarToggled - Whether the bar is toggled or not.
-function LayoutManager:SetIsActionBarToggled(IsActionBarToggled)
-  assert(type(IsActionBarToggled) == "boolean", "IsActionBarToggled must be a boolean.")
-
-  self.IsActionBarToggled = IsActionBarToggled
-end
-
---- Set the height of the experience bar.
--- @tparam number ExperienceBarHeight - New height of the bar, must be greater than 0.
-function LayoutManager:SetExperienceBarHeight(ExperienceBarHeight)
-  assert(type(ExperienceBarHeight) == "number", "ExperienceBarHeight must be a number.")
-  assert(ExperienceBarHeight > 0, "ExperienceBarHeight must be greater than 0.")
-
-  self.ExperienceBarHeight = ExperienceBarHeight
-end
-
---- Set the height of the reputation bar.
--- @tparam number ReputationBarHeight - New height of the bar, must be greater than 0.
-function LayoutManager:SetReputationBarHeight(ReputationBarHeight)
-  assert(type(ReputationBarHeight) == "number", "ReputationBarHeight must be a number.")
-  assert(ReputationBarHeight > 0, "ReputationBarHeight must be greater than 0.")
-
-  self.ReputationBarHeight = ReputationBarHeight
-end
-
---- Set whether the experience and reputation bars should appear below the action buttons or not.
--- @tparam boolean ExperienceBarAtBottom - If 'true', bars will be at the bottom.
-function LayoutManager:SetExperienceBarAtBottom(ExperienceBarAtBottom)
-  assert(type(ExperienceBarAtBottom) == "boolean", "ExperienceBarAtBottom must be a boolean.")
-
-  self.ExperienceBarAtBottom = ExperienceBarAtBottom
-end
-
---- Set the opacity of the experience and reputation bars overlay texture.
--- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
-function LayoutManager:SetXPBarTextureOpacity(Opacity)
-  assert(type(Opacity) == "number", "Opacity must be a number.")
-  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
-
-  local Textures = {}
-
-  for i = 0, 3 do
-    table.insert(Textures, ReputationWatchBar.StatusBar["WatchBarTexture"..i])
-    table.insert(Textures, ReputationWatchBar.StatusBar["XPBarTexture"..i])
-    table.insert(Textures, _G["MainMenuXPBarTexture"..i])
-  end
-
-  SetTexturesOpacity(Textures, Opacity)
-end
-
---- Set whether the left multi action bar should be stacked or not.
--- @tparam boolean StackMultiBarLeft - If 'true', the bar will stacked in the main menu bar.
-function LayoutManager:SetStackMultiBarLeft(StackMultiBarLeft)
-  assert(type(StackMultiBarLeft) == "boolean", "StackMultiBarLeft must be a boolean.")
-
-  self.StackMultiBarLeft = StackMultiBarLeft
-end
-
---- Set whether the right multi action bar should be stacked or not.
--- @tparam boolean StackMultiBarRight - If 'true', the bar will stacked in the main menu bar.
-function LayoutManager:SetStackMultiBarRight(StackMultiBarRight)
-  assert(type(StackMultiBarRight) == "boolean", "StackMultiBarRight must be a boolean.")
-
-  self.StackMultiBarRight = StackMultiBarRight
-end
-
---- Set the style of the main menu bar end caps.
--- @tparam string TextureStyle - Style of the end caps, must be either 'Dwarf' or 'Human'.
-function LayoutManager:SetMainMenuBarTextureStyle(TextureStyle)
-  assert(type(TextureStyle) == "string", "TextureStyle must be a string.")
-  assert(TextureStyle == "Dwarf" or TextureStyle == "Human", "TextureStyle must be one of: \"Dwarf\", \"Human\".")
-
-  local EndCapTexture = "Interface\\MainMenuBar\\UI-MainMenuBar-EndCap-"..TextureStyle
-  MainMenuBarLeftEndCap:SetTexture(EndCapTexture)
-  MainMenuBarRightEndCap:SetTexture(EndCapTexture)
-
-  local MainMenuBarTexture = "Interface\\MainMenuBar\\UI-MainMenuBar-"..TextureStyle
-  MainMenuBarTexture0:SetTexture(MainMenuBarTexture)
-  MainMenuBarTexture1:SetTexture(MainMenuBarTexture)
-end
-
---- Set the opacity of the main menu bar end caps.
--- @tparam number Opacity - Opacity, 'number' between 0.0 and 1.0.
-function LayoutManager:SetEndCapsTextureOpacity(Opacity)
-  assert(type(Opacity) == "number", "Opacity must be a number.")
-  assert(Opacity >= 0 and Opacity <= 1, "Opacity must be a beteen 0 and 1, inclusive.")
-
-  local Textures = {
-    MainMenuBarLeftEndCap,
-    MainMenuBarRightEndCap,
-  }
-
-  SetTexturesOpacity(Textures, Opacity)
-end
-
---- Set the scale of the main menu bar end caps.
--- @tparam number Scale - Scale of the bar, 'number' greater than 0.
-function LayoutManager:SetEndCapsTextureScale(Scale)
-  assert(type(Scale) == "number", "Scale must be a number.")
-  assert(Scale > 0, "Scale must be greater than 0.")
-
-  MainMenuBarLeftEndCap:SetScale(Scale)
-  MainMenuBarRightEndCap:SetScale(Scale)
-end
-
---- Set the properties of the action button count label font.
--- @tparam table FontProperties - Properties of the font.
-function LayoutManager:SetActionButtonCountFont(FontProperties)
-  SetActionButtonFont("Count", FontProperties)
-end
-
---- Set the properties of the action button hotkey label font.
--- @tparam table FontProperties - Properties of the font.
-function LayoutManager:SetActionButtonHotKeyFont(FontProperties)
-  SetActionButtonFont("HotKey", FontProperties)
-end
-
---- Set the properties of the action button name label font.
--- @tparam table FontProperties - Properties of the font.
-function LayoutManager:SetActionButtonNameFont(FontProperties)
-  SetActionButtonFont("Name", FontProperties)
-end
-
---- Set the properties of the experience bar text label font.
--- @tparam table FontProperties - Properties of the font.
-function LayoutManager:SetExperienceBarTextFont(FontProperties)
-  CompactActionBar:ApplyFontProperties(MainMenuBarExpText, FontProperties)
-end
-
---- Set the properties of the reputation bar text label font.
--- @tparam table FontProperties - Properties of the font.
-function LayoutManager:SetReputationBarTextFont(FontProperties)
-  CompactActionBar:ApplyFontProperties(ReputationWatchBar.OverlayFrame.Text, FontProperties)
 end

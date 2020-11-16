@@ -24,7 +24,7 @@ local AvailablePresetsList = {
     Image = CompactActionBar.MediaRoot.."Textures/Presets/ClassicWoW.jpg",
     Settings = {
       MainMenuBarScale        = 1.0,
-      CompactBarMode          = CompactActionBar.COMPACTBARMODE.DISABLED,
+      CompactBarMode          = 0,
       LabelFontProperties     = {
         ActionButtonHotKey    = {
           Outline             = "THICKOUTLINE",
@@ -86,6 +86,12 @@ local AvailablePresetsList = {
       XPBarTextureOpacity     = 0.0,
       StackMultiBarRight      = true,
       EndCapsTextureOpacity   = 0.0,
+      LabelFontProperties     = {
+        ActionButtonName      = {
+          Face                = "Arial Narrow",
+          Height              = 11,
+        },
+      },
     },
   },
 }

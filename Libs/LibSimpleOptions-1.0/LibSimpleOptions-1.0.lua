@@ -23,6 +23,24 @@ L["Outline"] = "Outline"
 L["Thick Outline"] = "Thick Outline"
 L["Monochrome"] = "Monochrome"
 
+--- Possible frame strata values.
+SimpleOptions.StrataValues = {}
+--- Frame strata values sorting.
+SimpleOptions.StrataSorting = {
+  "TOOLTIP",
+  "FULLSCREEN_DIALOG",
+  "FULLSCREEN",
+  "DIALOG",
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+  "BACKGROUND",
+}
+
+for i, Value in pairs(SimpleOptions.StrataSorting) do
+  SimpleOptions.StrataValues[Value] = Value
+end
+
 --- Merge two tables, copying the keys from Table2 to Table1.
 -- Doesn't reference the keys in Table2, creates a copy instead.
 -- @tparam table Table1 - Target table to copy the keys to.
