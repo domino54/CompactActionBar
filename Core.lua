@@ -9,13 +9,6 @@ CompactActionBar.GAMEVERSION = {
   CLASSIC  = 2,   -- World of Warcraft Classic
 }
 
---- Table of available Compact Action Bar modes.
-CompactActionBar.COMPACTBARMODE = {
-  DISABLED  = 0,  -- Long bar as default look of WoW Classic
-  TOGGLE    = 1,  -- Shortened bar, left and right side toggled via button
-  STACKED   = 2,  -- Shortened bar, left and right side above each other
-}
-
 --- Table of available modules ready to be initialized.
 CompactActionBar.Modules      = {}
 --- Base path to the resources of the addon.
@@ -72,29 +65,27 @@ function CompactActionBar:ModuleSubscribeToEvents(Frame, EventNames, Callback)
   Frame:SetScript("OnEvent", Callback)
 end
 
---- Get a created module and initialize it.
+--- Get a module.
 -- @tparam string ModuleName - Name of the module to get.
--- @treturn table - Initialized module.
-function CompactActionBar:GetAndInitModule(ModuleName)
+-- @treturn table - Module.
+function CompactActionBar:GetModule(ModuleName)
   assert(type(ModuleName) == "string", "ModuleName must be a string.")
   assert(self.Modules[ModuleName] ~= nil, "No module named \""..ModuleName.."\" exists.")
   assert(type(self.Modules[ModuleName]) == "table", "Module \""..ModuleName.."\" is not a table.")
 
-  local Module = self.Modules[ModuleName]
-  Module:Init(CompactActionBar.GameVersion)
-  return Module
+  return self.Modules[ModuleName]
 end
 
 --- Initialize the Compact Action Bar addon.
 function CompactActionBar:OnInitialize()
-  self.GameVersion      = GetGameVersion()
+  self.GameVersion = GetGameVersion()
 
   --- Initialize the created modules.
   for ModuleName, Module in pairs(self.Modules) do
     Module:Init()
   end
 
-  --self.Options:BuildDatabaseAndOptions()
+  --- Build the options database and panel.
   Options:Build("CompactActionBar", "CompactActionBarDB", L["Compact Action Bar"])
 
   -- Key bindings localisation
@@ -102,63 +93,12 @@ function CompactActionBar:OnInitialize()
 end
 
 --- Global update, called when a module requests a global update.
+-- Module update should not chain another global update.
 function CompactActionBar:Update()
-  if (self.Options == nil) then return end
-
-  local LabelFontProperties = self.Options:Get("LabelFontProperties")
-  local IsToggled = false
-
-  -- Get the current toggle state
-  if (self.ToggleButton ~= nil) then
-    IsToggled = self.ToggleButton.IsToggled
+  --- Update the loaded modules.
+  for ModuleName, Module in pairs(self.Modules) do
+    if (type(Module.Update) == "function") then
+      Module:Update()
+    end
   end
-
-  -- Set the toggle state in layout
-  --
-
-  -- Set toggle button visibility
-  if (self.ToggleButton ~= nil) then
-    self.ToggleButton:SetShown(true)
-  end
-
-  -- Update layout manager
-  --[[
-  if (self.LayoutManager ~= nil) then
-    -- Compact Bar Mode
-    self.LayoutManager:SetCompactBarMode            (self.Options:Get("CompactBarMode"))
-    self.LayoutManager:SetPageSwitchInLeft          (self.Options:Get("IncludeBarSwitcher"))
-    self.LayoutManager:SetIsActionBarToggled        (IsToggled)
-
-    -- Position & Scale
-    self.LayoutManager:SetMainMenuBarScale          (self.Options:Get("MainMenuBarScale"))
-    self.LayoutManager:SetMainMenuBarOffset         (self.Options:Get("MainMenuBarOffsetX"), self.Options:Get("MainMenuBarOffsetY"))
-    self.LayoutManager:SetMainMenuBarStrata         (self.Options:Get("MainMenuBarStrata"))
-    self.LayoutManager:SetMainMenuBarOpacity        (self.Options:Get("MainMenuBarOpacity"))
-    self.LayoutManager:SetMainMenuTextureOpacity    (self.Options:Get("MainMenuTextureOpacity"))
-
-    -- Experience Bar
-    self.LayoutManager:SetExperienceBarHeight       (self.Options:Get("ExperienceBarHeight"))
-    self.LayoutManager:SetReputationBarHeight       (self.Options:Get("ReputationBarHeight"))
-    self.LayoutManager:SetXPBarTextureOpacity       (self.Options:Get("XPBarTextureOpacity"))
-    self.LayoutManager:SetExperienceBarAtBottom     (self.Options:Get("ExperienceBarAtBottom"))
-
-    -- Multi bar stacking
-    self.LayoutManager:SetStackMultiBarLeft         (self.Options:Get("StackMultiBarLeft"))
-    self.LayoutManager:SetStackMultiBarRight        (self.Options:Get("StackMultiBarRight"))
-
-    -- End caps
-    self.LayoutManager:SetEndCapsTextureScale       (self.Options:Get("EndCapsTextureScale"))
-    self.LayoutManager:SetEndCapsTextureOpacity     (self.Options:Get("EndCapsTextureOpacity"))
-    self.LayoutManager:SetMainMenuBarTextureStyle   (self.Options:Get("EndCapsTextureStyle"))
-
-    -- Font properties
-    self.LayoutManager:SetActionButtonNameFont      (LabelFontProperties["ActionButtonName"])
-    self.LayoutManager:SetActionButtonHotKeyFont    (LabelFontProperties["ActionButtonHotKey"])
-    self.LayoutManager:SetActionButtonCountFont     (LabelFontProperties["ActionButtonCount"])
-    self.LayoutManager:SetExperienceBarTextFont     (LabelFontProperties["ExperienceBarText"])
-    self.LayoutManager:SetReputationBarTextFont     (LabelFontProperties["ReputationBarText"])
-
-    self.LayoutManager:Update()
-  end
-  ]]
 end
