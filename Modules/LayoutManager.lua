@@ -672,6 +672,8 @@ local function SetContainersArrangement(ActionBarMode, IsToggled)
   end
 
   SetMainMenuBarWidth(M.CompactActionBarContainer:GetWidth())
+  M.CompactActionBarLeftBarFrame:SetShown(ActionBarMode ~= M.COMPACTBARMODE.TOGGLE or not IsToggled)
+  M.CompactActionBarRightBarFrame:SetShown(ActionBarMode ~= M.COMPACTBARMODE.TOGGLE or IsToggled)
 end
 
 --- Set the orientation of cuttons inside a multi action bar.
