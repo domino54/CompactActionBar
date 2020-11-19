@@ -1178,7 +1178,12 @@ function LayoutManager:Init()
 
   -- Hook to functions
   hooksecurefunc("UIParent_ManageFramePositions", function() self:Update() end)
+  --hooksecurefunc("MainMenuBar_UpdateExperienceBars", function() self:Update() end)
+  --hooksecurefunc("MultiActionBar_Update", function() self:Update() end)
   MainMenuBar:HookScript("OnShow", function() self:Update() end)
+
+  --VerticalMultiBarsContainer:SetScript("OnEvent", nil)
+  --ActionBarController:SetScript("OnEvent", nil)
 
   -- Call the first update
   self:Update()
