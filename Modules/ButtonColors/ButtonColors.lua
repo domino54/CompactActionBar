@@ -356,8 +356,11 @@ function ButtonColors:Init()
     -- Start the periodic updates
     PeriodicUpdate()
 
-  -- Hook action button functions - Classic
-  elseif (CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC) then
+  -- Hook action button functions - Classic and BC Classic
+  elseif (
+    CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC or
+    CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.TBC
+  ) then
     hooksecurefunc("ActionButton_OnUpdate", ActionButton_OnUpdate)
     hooksecurefunc("ActionButton_UpdateUsable", ActionButton_UpdateUsable)
   end

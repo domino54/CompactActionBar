@@ -4,9 +4,10 @@ local Options = LibStub("LibSimpleOptions-1.0")
 
 --- Table of supported game versions.
 CompactActionBar.GAMEVERSION = {
-  UNKNOWN  = 0,   -- TBC Classic! Or something else
+  UNKNOWN  = 0,   -- WotLK Classic! Or something else
   RETAIL   = 1,   -- World of Warcraft Shadowlands
   CLASSIC  = 2,   -- World of Warcraft Classic
+  TBC      = 3,   -- World of Warcraft Burning Crusade Classic
 }
 
 --- Table of available modules ready to be initialized.
@@ -26,6 +27,10 @@ local function GetGameVersion()
   -- Classic
   elseif (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC) then
     return CompactActionBar.GAMEVERSION.CLASSIC
+
+  -- Burning Crusade Classic
+  elseif (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC) then
+    return CompactActionBar.GAMEVERSION.TBC
   end
 
   -- Unknown

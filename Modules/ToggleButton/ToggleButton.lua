@@ -215,8 +215,6 @@ end
 
 --- Initialize the module.
 function ToggleButton:Init()
-  if (CompactActionBar.GameVersion ~= CompactActionBar.GAMEVERSION.CLASSIC) then return end
-
   -- Togle button container
   self.ToggleButtonContainer = CreateFrame("Frame", "CompactActionBarToggleButtonContainer", MainMenuBar)
   self.ToggleButtonContainer:SetPoint("CENTER", MainMenuBar, "BOTTOMRIGHT", 21, 21)
@@ -281,8 +279,6 @@ end
 
 --- Module global update.
 function ToggleButton:Update()
-  if (CompactActionBar.GameVersion ~= CompactActionBar.GAMEVERSION.CLASSIC) then return end
-
   local LayoutManager = CompactActionBar:GetModule("LayoutManager")
 
   --- Set button visibility based on current compact bar mode.
