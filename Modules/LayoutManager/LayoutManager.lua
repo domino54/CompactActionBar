@@ -1108,6 +1108,19 @@ local function OnConfigUpdate()
   CompactActionBar:Update()
 end
 
+local function InitLayoutClassic()
+  -- Remove these frames from Blizzard UIParent frame position manager
+  local removables = {
+    "StanceBarFrame",
+    "MultiBarBottomLeft",
+    "ExtraActionBarFrame",
+  }
+
+  for _, removable in ipairs(removables) do
+    UIPARENT_MANAGED_FRAME_POSITIONS[removable] = nil
+  end
+end
+
 --- Initialize the module.
 function LayoutManager:Init()
 
@@ -1121,6 +1134,7 @@ function LayoutManager:Init()
   Options:AddListener(OnConfigUpdate)
 
   -- Init layout
+  InitLayoutClassic()
   CreateMainMenuBarContainers()
   InitExperienceAndReputationBarsLayout()
 
