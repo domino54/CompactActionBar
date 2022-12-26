@@ -879,6 +879,15 @@ local function UpdateActionBarArrangement()
     LeftAnchorOffsetY = LeftAnchorOffsetY + 36
   end
 
+  -- Fix MultiCastActionBar (totem bar) offset
+  MultiCastActionBarFrame:ClearAllPoints()
+  MultiCastActionBarFrame:SetPoint("BOTTOMLEFT", MainMenuBar, "BOTTOMLEFT", 32, LeftAnchorOffsetY)
+
+  if (MultiCastActionBarFrame:IsShown()) then
+    LeftAnchorOffsetY = LeftAnchorOffsetY + 36
+  end
+
+
   -- Stance / shapeshift
   StanceBarFrame:ClearAllPoints()
   StanceBarFrame:SetPoint("BOTTOMLEFT", MainMenuBar, "BOTTOMLEFT", 32, LeftAnchorOffsetY)
@@ -1112,6 +1121,7 @@ local function InitLayoutClassic()
   -- Remove these frames from Blizzard UIParent frame position manager
   local removables = {
     "StanceBarFrame",
+    "MultiCastActionBarFrame",
     "MultiBarBottomLeft",
     "ExtraActionBarFrame",
   }
