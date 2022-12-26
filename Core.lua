@@ -8,6 +8,7 @@ CompactActionBar.GAMEVERSION = {
   RETAIL   = 1,   -- World of Warcraft Shadowlands
   CLASSIC  = 2,   -- World of Warcraft Classic
   TBC      = 3,   -- World of Warcraft Burning Crusade Classic
+  WRATH    = 4,   -- World of Warcraft Wrath Classic
 }
 
 --- Table of available modules ready to be initialized.
@@ -31,6 +32,9 @@ local function GetGameVersion()
   -- Burning Crusade Classic
   elseif (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC) then
     return CompactActionBar.GAMEVERSION.TBC
+  
+  elseif (WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC) then
+    return CompactActionBar.GAMEVERSION.WRATH
   end
 
   -- Unknown

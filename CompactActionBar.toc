@@ -1,5 +1,5 @@
 ﻿
-## Interface: 20501
+## Interface: 30400
 
 ## Title: |cFFFFFFFFCompact Action Bar|r |cFF00FF00v1.2.3|r
 ## Author: Dommy (Asteveria-MirageRaceway/EU-Alliance)
@@ -10,7 +10,7 @@
 ## X-Website: https://github.com/domino54/CompactActionBar
 ## X-Localizations: enUS
 ## X-Category: Action Bars
-## X-Copyright: (c) 2020 Dominik Mrajca - All Rights Reserved
+## X-Copyright: (c) 2022 Dominik Mrajca - All Rights Reserved
 
 Libs\Libs.xml
 Locales\Locales.xml

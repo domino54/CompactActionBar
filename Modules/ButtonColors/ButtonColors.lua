@@ -359,7 +359,8 @@ function ButtonColors:Init()
   -- Hook action button functions - Classic and BC Classic
   elseif (
     CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.CLASSIC or
-    CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.TBC
+    CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.TBC or
+    CompactActionBar.GameVersion == CompactActionBar.GAMEVERSION.WRATH
   ) then
     hooksecurefunc("ActionButton_OnUpdate", ActionButton_OnUpdate)
     hooksecurefunc("ActionButton_UpdateUsable", ActionButton_UpdateUsable)
